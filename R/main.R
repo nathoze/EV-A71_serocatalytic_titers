@@ -10,12 +10,12 @@ source("R/utils.R")
 
 
 ################################################################################
-# Data : EV71 in Malaysia 1995 -> 2012 
+# Data : EV71 in Malaysia 1995 -> 2012
 ################################################################################
 
 data.EV71.Malaysia  <- readRDS('data/titers_by_class.rds')
-data.EV71.Malaysia <- data.EV71.Malaysia %>% 
-  mutate(age = sampling.year-birth.year) %>% 
+data.EV71.Malaysia <- data.EV71.Malaysia %>%
+  mutate(age = sampling.year-birth.year) %>%
   mutate(n =  replace_na(n,0) ) %>%
   filter(age <= 12)
 
@@ -24,7 +24,7 @@ data.EV71.Malaysia <- data.EV71.Malaysia %>%
 ################################################################################
 
 
-min.year.sampling <- min(data.EV71.Malaysia$sampling.year) 
+min.year.sampling <- min(data.EV71.Malaysia$sampling.year)
 max.year.sampling <- max(data.EV71.Malaysia$sampling.year)
 sampling.years = seq(min.year.sampling, max.year.sampling)
 N.sampling.years = length(sampling.years)
@@ -34,10 +34,10 @@ N.FOI = N.sampling.years + age.max # The number of FOI measured. We consider her
 N.birth.years   = N.FOI # The number of birth years considered (-1 if we remove the latest year)
 birth.years = seq(min.year.sampling-age.max, max.year.sampling)
 
-#start.sampling.year = age.max 
+#start.sampling.year = age.max
 N.titer.sets = age.max*N.sampling.years
 
-titer.observable.max = max(data.EV71.Malaysia$titer.class) 
+titer.observable.max = max(data.EV71.Malaysia$titer.class)
 
 N.titers = 10 # the number of possible values of the titers
 Titers.0 <- c(1,rep(0,N.titers-1)) # probability distribution of the titers at birth (everybody is seronegative at birth)
@@ -49,19 +49,16 @@ Titers.0 <- c(1,rep(0,N.titers-1)) # probability distribution of the titers at b
 ################################################################################
 
 compute_loglik <- function(all.params) {
-  
+
   prob.titers =  left_join(all.params$titer.distribution, data.EV71.Malaysia,
-                           by = c("birth.year", "age", "titer.class", "sampling.year"))  %>% 
-    group_by(age, sampling.year) %>% 
+                           by = c("birth.year", "age", "titer.class", "sampling.year"))  %>%
+    group_by(age, sampling.year) %>%
     summarise(ll  = dmultinom(x = n,prob = obs.proportion, log=TRUE), .groups='drop')  %>%
     summarise(s= sum(ll))
-  
+
   return(prob.titers$s)
-  
+
 }
-
-
-
 
 
 ################################################################################
@@ -75,15 +72,14 @@ params0  = c( runif(n  = N.FOI, max = 0.7) , 3,1)
 # # inds_to_update contains indices of parameters to update. Here we do not update
 # #   first parameter (R of historical virus), which will be fixed at 1.0
 # inds_to_update <- 2:length(params0)
+inds_to_update <- c(31,32) # Here we update the antibody model parameters
 inds_to_update <- 1:length(params0) # Here we update all the parameters
-inds_to_update <- c(31,32) # Here we update all the parameters
 
-mcmc_steps <- 70000
-mcmc_adaptive_steps <- 20000
+mcmc_steps <- 12000
+mcmc_adaptive_steps <- 5000
 
-
-mcmc_steps <- 50
-mcmc_adaptive_steps <- 40
+#mcmc_steps <- 50
+#mcmc_adaptive_steps <- 40
 
 is_invalid <- function(k, value) { # Function that checks if parameter value is invalid
   if (k == (n_change_points + 2) & value > 1) { return(TRUE) } # Prop VOC at t=0 cannot be > 1
@@ -91,9 +87,9 @@ is_invalid <- function(k, value) { # Function that checks if parameter value is 
 }
 
 is_invalid <- function(k, value) { # Function that checks if parameter value is invalid
-  if (value <10-10) { return(TRUE) } # All the parameters must be > 0
-  if (k == 31 & value >8) { return(TRUE) }  
-  if (k == 32 & value >8) { return(TRUE) }  
+  if (value <10-8) { return(TRUE) } # All the parameters must be > 0
+  if (k == 31 & value >8) { return(TRUE) }
+  if (k == 32 & value >8) { return(TRUE) }
   FALSE
 }
 
