@@ -87,7 +87,7 @@ is_invalid <- function(k, value) { # Function that checks if parameter value is 
 }
 
 is_invalid <- function(k, value) { # Function that checks if parameter value is invalid
-  if (value <10-8) { return(TRUE) } # All the parameters must be > 0
+  if (value <10e-9) { return(TRUE) } # All the parameters must be > 0
   if (k == 31 & value >8) { return(TRUE) }
   if (k == 32 & value >8) { return(TRUE) }
   FALSE
@@ -99,6 +99,10 @@ res <- run_MCMC(compute_loglik, is_invalid, params0,
                 mcmc_steps = mcmc_steps,
                 mcmc_adaptive_steps = mcmc_adaptive_steps,
                 verbose = TRUE)
+
+
+
+
 
 burn_in <- mcmc_adaptive_steps
 thinning <- seq(burn_in + 1, mcmc_steps, by = 50)

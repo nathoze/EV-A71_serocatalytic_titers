@@ -186,6 +186,7 @@ update_all_parameters <- function(old.all.parameters, new.param, updated_index){
   if(updated_index >= N.FOI+1){ #  Increase  or decay parameter
     new.all.parameters = get_all_parameters(new.all.parameters$params)
   }
+
   new.all.parameters$titer.distribution = titer_distribution(new.all.parameters$transition.matrices)
 
   return(new.all.parameters)
