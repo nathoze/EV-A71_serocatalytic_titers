@@ -2,3 +2,4 @@
 .Rhistory
 data/fakedata_ignore.R
 data/titers_by_class.rds
+results/
