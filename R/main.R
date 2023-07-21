@@ -75,8 +75,8 @@ params0  = c( runif(n  = N.FOI, max = 0.7) , 3,1)
 inds_to_update <- c(31,32) # Here we update the antibody model parameters
 inds_to_update <- 1:length(params0) # Here we update all the parameters
 
-mcmc_steps <- 12000
-mcmc_adaptive_steps <- 5000
+mcmc_steps <- 120
+mcmc_adaptive_steps <- 50
 
 #mcmc_steps <- 50
 #mcmc_adaptive_steps <- 40
@@ -88,7 +88,7 @@ is_invalid <- function(k, value) { # Function that checks if parameter value is 
 
 is_invalid <- function(k, value) { # Function that checks if parameter value is invalid
   if (value <10e-9) { return(TRUE) } # All the parameters must be > 0
-  if (k<30 & value >2) { return(TRUE) } # the foi
+  if (k<=30 & value >2) { return(TRUE) } # the foi
   if (k == 31 & value >8) { return(TRUE) }# sigmaP
   if (k == 32 & value >8) { return(TRUE) }# Omega
   FALSE
@@ -100,6 +100,21 @@ res <- run_MCMC(compute_loglik, is_invalid, params0,
                 mcmc_steps = mcmc_steps,
                 mcmc_adaptive_steps = mcmc_adaptive_steps,
                 verbose = TRUE)
+
+
+## Define a model
+model = list(compute_loglik = compute_loglik,
+             is_invalid = is_invalid,
+             params0 = params0,
+             inds_to_update = inds_to_update,
+             get_all_parameters = get_all_parameters)
+
+
+
+res <-  run_MCMC_specify_model(model,
+                               mcmc_steps = mcmc_steps,
+                               mcmc_adaptive_steps = mcmc_adaptive_steps,
+                               verbose = TRUE)
 
 
 
