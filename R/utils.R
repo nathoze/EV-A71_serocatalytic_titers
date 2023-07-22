@@ -109,8 +109,9 @@ run_MCMC_specify_model <- function(model,
   compute_loglik = model$compute_loglik
   is_invalid = model$is_invalid
   params0 = model$params0
+  inds_to_update = model$inds_to_update
+  update_all_parameters = model$update_all_parameters
   get_all_parameters = model$get_all_parameters
-  inds_to_update = modem$inds_to_update
 
   n_params <- length(params0)
 
@@ -200,5 +201,5 @@ run_MCMC_specify_model <- function(model,
     }
   } # MCMC loop end
 
-  list(loglik = loglik, params = params, accept = accept)
+  list(loglik = loglik, params = params, accept = accept, model = model)
 }

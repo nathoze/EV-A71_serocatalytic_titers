@@ -7,6 +7,7 @@ library(tidyverse)
 
 source("R/Model_EV71.R")
 source("R/utils.R")
+source("R/Additional_models.R")
 
 
 ################################################################################
@@ -88,9 +89,9 @@ is_invalid <- function(k, value) { # Function that checks if parameter value is 
 
 is_invalid <- function(k, value) { # Function that checks if parameter value is invalid
   if (value <10e-9) { return(TRUE) } # All the parameters must be > 0
-  if (k<=30 & value >2) { return(TRUE) } # the foi
-  if (k == 31 & value >8) { return(TRUE) }# sigmaP
-  if (k == 32 & value >8) { return(TRUE) }# Omega
+  if (k<=N.FOI & value >2) { return(TRUE) } # the foi
+  if (k == N.FOI+1 & value >8) { return(TRUE) }# sigmaP
+  if (k == N.FOI+2 & value >8) { return(TRUE) }# Omega
   FALSE
 }
 
@@ -111,10 +112,24 @@ model = list(compute_loglik = compute_loglik,
 
 
 
-res <-  run_MCMC_specify_model(model,
+# Example: Specify a  Model constant
+
+params0  = c( 0.3, 3,1)
+inds_to_update <- 1:length(params0) # Here we update all the parameters
+
+model_constant = list(compute_loglik = compute_loglik,
+                      params0 = params0,
+                      inds_to_update = inds_to_update,
+                      is_invalid = is_invalid_model_constant,
+                      get_all_parameters = get_all_parameters_model_constant,
+                      update_all_parameters = update_all_parameters_model_constant)
+
+res <-  run_MCMC_specify_model(model = model_constant,
                                mcmc_steps = mcmc_steps,
                                mcmc_adaptive_steps = mcmc_adaptive_steps,
                                verbose = TRUE)
+# model_constant$get_all_parameters(res$params[100,])
+
 
 
 

@@ -63,9 +63,8 @@ titer_distribution <- function(transition.matrices){ # replace on specific indic
   df = NULL
   j=0
   for(birth.year in seq(min.year.sampling-age.max,max.year.sampling )){
-    titers = Titers.0
 
-    ## Attention aux années prises pour le dernier échantillonage
+    titers = Titers.0
     years <- head(seq(birth.year,min(birth.year+age.max,max.year.sampling)),age.max)
 
     n = length(years)
@@ -81,8 +80,9 @@ titer_distribution <- function(transition.matrices){ # replace on specific indic
     obs = get_observed_titers(Titers.year)
 
     df=rbind(df, data.frame( birth.year = birth.year,
-                             age = rep(seq(1,n), each =titer.observable.max),
-                             obs.proportion = as.numeric(obs), titer.class= rep(seq(1,titer.observable.max), n)))
+                             age = rep(seq(1,n), each = titer.observable.max),
+                             obs.proportion = as.numeric(obs),
+                             titer.class= rep(seq(1,titer.observable.max), n)))
   }
 
   df2 = df %>%
@@ -207,4 +207,6 @@ get_observed_titers <- function(Titers.year, titer.observable.max = 5){
 
   return(M)
 }
+
+
 
