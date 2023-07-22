@@ -112,7 +112,7 @@ model = list(compute_loglik = compute_loglik,
 
 
 
-# Example: Specify a  Model constant
+# Example: Specify a  Model constant ----
 
 params0  = c( 0.3, 3,1)
 inds_to_update <- 1:length(params0) # Here we update all the parameters
@@ -131,7 +131,26 @@ res <-  run_MCMC_specify_model(model = model_constant,
 # model_constant$get_all_parameters(res$params[100,])
 
 
+# Constant FOI in periods of five years -----
 
+params0  = c(  runif(n  = round(N.FOI/5), max = 0.7), 3,1)
+n_params = length(params0)
+inds_to_update <- 1:length(params0) # Here we update all the parameters
+
+model_five_years= list(compute_loglik = compute_loglik,
+                       params0 = params0,
+                       inds_to_update = inds_to_update,
+                       is_invalid = is_invalid_model_five_years,
+                       get_all_parameters = get_all_parameters_model_five_years,
+                       update_all_parameters = update_all_parameters_model_five_years)
+
+res <-  run_MCMC_specify_model(model = model_five_years,
+                               mcmc_steps = mcmc_steps,
+                               mcmc_adaptive_steps = mcmc_adaptive_steps,
+                               verbose = TRUE)
+
+
+plot(res$params[1,1:6])
 
 burn_in <- mcmc_adaptive_steps
 thinning <- seq(burn_in + 1, mcmc_steps, by = 50)
