@@ -112,7 +112,7 @@ model = list(compute_loglik = compute_loglik,
 
 
 
-# Example: Specify a  Model constant ----
+# Example 1: Specify a  Model constant ----
 
 params0  = c( 0.3, 3,1)
 inds_to_update <- 1:length(params0) # Here we update all the parameters
@@ -128,12 +128,17 @@ res <-  run_MCMC_specify_model(model = model_constant,
                                mcmc_steps = mcmc_steps,
                                mcmc_adaptive_steps = mcmc_adaptive_steps,
                                verbose = TRUE)
+
 # model_constant$get_all_parameters(res$params[100,])
 
+model_constant$compute_loglik(all.params = model_constant$get_all_parameters(params0))
 
-# Constant FOI in periods of five years -----
+# Example 2: Constant FOI in periods of five years -----
 
+params0  = c( rep(0.3,6), 3,1)
 params0  = c(  runif(n  = round(N.FOI/5), max = 0.7), 3,1)
+
+params0= c( 0.2767452 , 0.2730377, 0.1934079, 0.4318872, 0.3687840, 0.3943001, 1.2745368, 1.0000000)
 n_params = length(params0)
 inds_to_update <- 1:length(params0) # Here we update all the parameters
 
@@ -149,6 +154,18 @@ res <-  run_MCMC_specify_model(model = model_five_years,
                                mcmc_adaptive_steps = mcmc_adaptive_steps,
                                verbose = TRUE)
 
+model_five_years$compute_loglik(all.params = model_five_years$get_all_parameters(params0))
+
+
+## To do :
+# - Need to control the proposal sd because it takes very high values very quickly
+# - plot the force of infection per year
+# - plot fits of the titer distribution
+# - simulate a titer distribution from a model and a set of parameters
+# - Implement other models for the titer dynamics and for the FOI
+
+
+# Plot -----
 
 plot(res$params[1,1:6])
 

@@ -142,6 +142,7 @@ run_MCMC_specify_model <- function(model,
   accepted <- rep(0, n_params) # Number of accepted moves
   accepted[inds_to_update] <- 1
   for (step in 2:mcmc_steps) {
+   # print(sd_proposal)
     if (verbose) print(step)
     params[step, ] <- params[step - 1, ]
     loglik[step] <- loglik[step - 1]
