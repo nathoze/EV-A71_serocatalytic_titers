@@ -48,6 +48,8 @@ get_all_parameters_model_constant <- function(params){
   return(all.parameters)
 
 }
+
+
 is_invalid_model_constant <- function(k, value) { # Function that checks if parameter value is invalid
   if (value <10e-9) { return(TRUE) } # All the parameters must be > 0
   if (k == 1 & value >2) { return(TRUE) } # the foi

@@ -142,7 +142,7 @@ run_MCMC_specify_model <- function(model,
   accepted <- rep(0, n_params) # Number of accepted moves
   accepted[inds_to_update] <- 1
   for (step in 2:mcmc_steps) {
-   # print(sd_proposal)
+     print(sd_proposal)
     if (verbose) print(step)
     params[step, ] <- params[step - 1, ]
     loglik[step] <- loglik[step - 1]
@@ -171,6 +171,7 @@ run_MCMC_specify_model <- function(model,
 
 
       new_loglik <- compute_loglik(all.params)
+      print(new_loglik)
       # Metropolis-Hastings
       log_ratio <- new_loglik - loglik[step] + log_proposal
 
@@ -180,16 +181,28 @@ run_MCMC_specify_model <- function(model,
           loglik[step] <- new_loglik
           accepted[k] <- accepted[k] + 1
         } else {
-          all.params$params[k] <- old_param
+          # BUG ICI ?
+          all.params <-  update_all_parameters(all.params,new.param = old_param,updated_index = k )
+
+          #all.params$params[k] <- old_param
           params[step,k] <- old_param
         }
       } else {
-        all.params$params[k] <- old_param
+         all.params <-  update_all_parameters(all.params,new.param = old_param,updated_index = k )
+
+       # all.params$params[k] <- old_param
         params[step,k] <- old_param
       }
     } # Parameter update end
 
     # Acceptance rates
+    #
+    print("ACCEPTED")
+    print(accepted)
+
+    print("ACCEPTED ratio")
+    print(accepted/step)
+
     accept[step, ] <- accepted / step
 
     # Adjust proposal sd to get closer to 'opt_acceptance'
@@ -200,6 +213,9 @@ run_MCMC_specify_model <- function(model,
         sd_proposal[k] <- sd_proposal[k] * (1.0 + delta * diff)
       }
     }
+
+ # sd_proposal[k] = 0.01
+
   } # MCMC loop end
 
   list(loglik = loglik, params = params, accept = accept, model = model)

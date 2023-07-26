@@ -112,7 +112,7 @@ model = list(compute_loglik = compute_loglik,
 
 
 
-# Example 1: Specify a  Model constant ----
+# Example 1: Specify a constant Model ----
 
 params0  = c( 0.3, 3,1)
 inds_to_update <- 1:length(params0) # Here we update all the parameters
@@ -129,9 +129,6 @@ res <-  run_MCMC_specify_model(model = model_constant,
                                mcmc_adaptive_steps = mcmc_adaptive_steps,
                                verbose = TRUE)
 
-# model_constant$get_all_parameters(res$params[100,])
-
-model_constant$compute_loglik(all.params = model_constant$get_all_parameters(params0))
 
 # Example 2: Constant FOI in periods of five years -----
 
@@ -159,10 +156,13 @@ model_five_years$compute_loglik(all.params = model_five_years$get_all_parameters
 
 ## To do :
 # - Need to control the proposal sd because it takes very high values very quickly
+# - Implement other models for the titer dynamics and for the FOI :
+# eg # model <- define_model(fct_model_antibody_increase,fct_model_antibody_decrease,fct_model_foi, etc)
+
 # - plot the force of infection per year
 # - plot fits of the titer distribution
 # - simulate a titer distribution from a model and a set of parameters
-# - Implement other models for the titer dynamics and for the FOI
+
 
 
 # Plot -----
