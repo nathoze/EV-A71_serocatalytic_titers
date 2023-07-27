@@ -7,7 +7,7 @@ library(tidyverse)
 
 source("R/Model_EV71.R")
 source("R/utils.R")
-source("R/Additional_models.R")
+source("R/FOI_models.R")
 
 
 ################################################################################
@@ -115,14 +115,18 @@ model = list(compute_loglik = compute_loglik,
 # Example 1: Specify a constant Model ----
 
 params0  = c( 0.3, 3,1)
-inds_to_update <- 1:length(params0) # Here we update all the parameters
 
+params0=c(0.4427671, 1.1189196, 1.73814652)
+inds_to_update <- 1:length(params0) # Here we update all the parameters
 model_constant = list(compute_loglik = compute_loglik,
                       params0 = params0,
                       inds_to_update = inds_to_update,
                       is_invalid = is_invalid_model_constant,
                       get_all_parameters = get_all_parameters_model_constant,
                       update_all_parameters = update_all_parameters_model_constant)
+mcmc_adaptive_steps=3000
+
+mcmc_steps = 5000
 
 res <-  run_MCMC_specify_model(model = model_constant,
                                mcmc_steps = mcmc_steps,
@@ -130,12 +134,19 @@ res <-  run_MCMC_specify_model(model = model_constant,
                                verbose = TRUE)
 
 
+
+
+# res$model$compute_loglik(res$model$get_all_parameters(res$model$params0))
+
+
 # Example 2: Constant FOI in periods of five years -----
 
 params0  = c( rep(0.3,6), 3,1)
 params0  = c(  runif(n  = round(N.FOI/5), max = 0.7), 3,1)
 
-params0= c( 0.2767452 , 0.2730377, 0.1934079, 0.4318872, 0.3687840, 0.3943001, 1.2745368, 1.0000000)
+params0= c( 0.5 , 0.5, 0.4, 0.3, 0.3687840, 0.3943001, 1, 1.5)
+
+params0=c(1.2944222, 0.3230752, 0.6266874, 0.4429604, 0.6127554, 0.7394369, 0.9057352, 2.7328078)
 n_params = length(params0)
 inds_to_update <- 1:length(params0) # Here we update all the parameters
 
@@ -154,8 +165,48 @@ res <-  run_MCMC_specify_model(model = model_five_years,
 model_five_years$compute_loglik(all.params = model_five_years$get_all_parameters(params0))
 
 
+
+## redefine models
+
+
+
+params0=c(0.4427671, 1.1189196, 1.73814652)
+inds_to_update <- 1:length(params0)
+model_constant  =  define_model(fct_model_antibody_increase = get_increase_matrix,
+                                fct_model_antibody_decrease = get_decay_matrix,
+                                compute_loglik = compute_loglik,
+                                params0 = params0,
+                                inds_to_update = inds_to_update,
+                                is_invalid = is_invalid_model_constant,
+                                get_all_parameters = get_all_parameters_model_constant,
+                                update_all_parameters = update_all_parameters_model_constant)
+
+
+res <-  run_MCMC_specify_model(model = model_constant,
+                               mcmc_steps = 10,
+                               mcmc_adaptive_steps = 10,
+                               verbose = TRUE)
+
+
+# Independant model
+params0  = c( runif(n  = N.FOI, max = 0.7) , 3,1)
+inds_to_update <- 1:length(params0)
+model_independent =  define_model(fct_model_antibody_increase = get_increase_matrix,
+                                fct_model_antibody_decrease = get_decay_matrix,
+                                compute_loglik = compute_loglik,
+                                params0 = params0,
+                                inds_to_update = inds_to_update,
+                                is_invalid = is_invalid_model_independent,
+                                get_all_parameters = get_all_parameters_model_independent,
+                                update_all_parameters = update_all_parameters_model_independent)
+
+
+res <-  run_MCMC_specify_model(model = model_independent,
+                               mcmc_steps = 10,
+                               mcmc_adaptive_steps = 10,
+                               verbose = TRUE)
+
 ## To do :
-# - Need to control the proposal sd because it takes very high values very quickly
 # - Implement other models for the titer dynamics and for the FOI :
 # eg # model <- define_model(fct_model_antibody_increase,fct_model_antibody_decrease,fct_model_foi, etc)
 

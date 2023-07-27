@@ -141,57 +141,57 @@ titer_distribution <- function(transition.matrices){ # replace on specific indic
 #
 # }
 
-get_all_parameters <- function(params){
-
-  increase.matrix=get_increase_matrix(N.titers  = N.titers, sigma.P = params[N.FOI+1])
-  decay.matrix=get_decay_matrix(N.titers = N.titers, omega = params[N.FOI+2])
-  transition.matrices = NULL
-
-  for(i in 1:N.FOI){
-    p = infection_probability(params[i])
-    transition.matrices[[i]] = (1-p)*decay.matrix+p*increase.matrix
-  }
-
-  titer.distribution = titer_distribution(transition.matrices)
-
-  all.parameters = list(increase.matrix = increase.matrix,
-                        decay.matrix = decay.matrix,
-                        transition.matrices = transition.matrices,
-                        titer.distribution = titer.distribution,
-                        params = params)
-
-
-  return(all.parameters)
-
-}
-
-# When the parameters are updated in the MCMC, only update some of the transformed parameters
-update_all_parameters <- function(old.all.parameters, new.param, updated_index){
-
-  new.all.parameters = old.all.parameters
-  new.all.parameters$params[updated_index] = new.param
-
-  if(updated_index <= N.FOI){ # We change the foi and therefore only the corresponding matrix
-    p = infection_probability(new.param)
-    new.all.parameters$transition.matrices[[updated_index]] = (1-p)*new.all.parameters$decay.matrix+p*new.all.parameters$increase.matrix
-
-    # I "optimized" the update of parameters but it didn't change the runtime
-    # t.d = titer_distribution_optimized(new.all.parameters, updated_index)
-    # new.all.parameters$titer.distribution = new.all.parameters$titer.distribution %>%
-    #   left_join(t.d, by = c("birth.year", "age", "titer.class", "sampling.year")) %>%
-    #   mutate(obs.proportion = case_when(is.na(obs.proportion.y) ~ obs.proportion.x, TRUE ~ obs.proportion.y)) %>%
-    #   select(-c(obs.proportion.x, obs.proportion.y))
-  }
-
-  if(updated_index >= N.FOI+1){ #  Increase  or decay parameter
-    new.all.parameters = get_all_parameters(new.all.parameters$params)
-  }
-
-  new.all.parameters$titer.distribution = titer_distribution(new.all.parameters$transition.matrices)
-
-  return(new.all.parameters)
-
-}
+# get_all_parameters <- function(params){
+#
+#   increase.matrix=get_increase_matrix(N.titers  = N.titers, sigma.P = params[N.FOI+1])
+#   decay.matrix=get_decay_matrix(N.titers = N.titers, omega = params[N.FOI+2])
+#   transition.matrices = NULL
+#
+#   for(i in 1:N.FOI){
+#     p = infection_probability(params[i])
+#     transition.matrices[[i]] = (1-p)*decay.matrix+p*increase.matrix
+#   }
+#
+#   titer.distribution = titer_distribution(transition.matrices)
+#
+#   all.parameters = list(increase.matrix = increase.matrix,
+#                         decay.matrix = decay.matrix,
+#                         transition.matrices = transition.matrices,
+#                         titer.distribution = titer.distribution,
+#                         params = params)
+#
+#
+#   return(all.parameters)
+#
+# }
+#
+# # When the parameters are updated in the MCMC, only update some of the transformed parameters
+# update_all_parameters <- function(old.all.parameters, new.param, updated_index){
+#
+#   new.all.parameters = old.all.parameters
+#   new.all.parameters$params[updated_index] = new.param
+#
+#   if(updated_index <= N.FOI){ # We change the foi and therefore only the corresponding matrix
+#     p = infection_probability(new.param)
+#     new.all.parameters$transition.matrices[[updated_index]] = (1-p)*new.all.parameters$decay.matrix+p*new.all.parameters$increase.matrix
+#
+#     # I "optimized" the update of parameters but it didn't change the runtime
+#     # t.d = titer_distribution_optimized(new.all.parameters, updated_index)
+#     # new.all.parameters$titer.distribution = new.all.parameters$titer.distribution %>%
+#     #   left_join(t.d, by = c("birth.year", "age", "titer.class", "sampling.year")) %>%
+#     #   mutate(obs.proportion = case_when(is.na(obs.proportion.y) ~ obs.proportion.x, TRUE ~ obs.proportion.y)) %>%
+#     #   select(-c(obs.proportion.x, obs.proportion.y))
+#   }
+#
+#   if(updated_index >= N.FOI+1){ #  Increase  or decay parameter
+#     new.all.parameters = get_all_parameters(new.all.parameters$params)
+#   }
+#
+#   new.all.parameters$titer.distribution = titer_distribution(new.all.parameters$transition.matrices)
+#
+#   return(new.all.parameters)
+#
+# }
 
 # Right-censor the data
 get_observed_titers <- function(Titers.year, titer.observable.max = 5){
