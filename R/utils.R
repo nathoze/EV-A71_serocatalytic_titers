@@ -1,5 +1,6 @@
 
 run_MCMC_specify_model <- function(model,
+                                   data,
                                    proposal_type = NULL,
                                    mcmc_steps = 1000, mcmc_adaptive_steps = 100,
                                    sd_proposal = NULL, opt_acceptance = 0.24,
@@ -41,7 +42,7 @@ run_MCMC_specify_model <- function(model,
 
   # MCMC loop start
   step <- 1
-  loglik[step] <- compute_loglik(all.params)
+  loglik[step] <- compute_loglik(all.params,data)
 
   accept[step, inds_to_update] <- 1
   accepted <- rep(0, n_params) # Number of accepted moves
@@ -74,7 +75,7 @@ run_MCMC_specify_model <- function(model,
       new.all.params <-  update_all_parameters(old.all.params,new.param = new_param, updated_index = k, fct_model_antibody_increase, fct_model_antibody_decrease )
       params[step, ] = new.all.params$params
 
-      new_loglik <- compute_loglik(new.all.params)
+      new_loglik <- compute_loglik(new.all.params,data)
 
       # Metropolis-Hastings
       log_ratio <- new_loglik - loglik[step] + log_proposal
@@ -113,7 +114,7 @@ run_MCMC_specify_model <- function(model,
 
   } # MCMC loop end
 
-  list(loglik = loglik, params = params, accept = accept, model = model, sd_proposal= sd_proposal)
+  list(loglik = loglik, params = params, accept = accept, model = model, sd_proposal= sd_proposal, data = data)
 }
 
 
@@ -142,8 +143,12 @@ define_model <- function(fct_model_antibody_increase = get_increase_matrix,
 }
 
 compute_DIC <- function(results, burn_in){
+
   #https://en.wikipedia.org/wiki/Deviance_information_criterion
+
+  data = results$data
   params = results$params[-seq(1,burn_in), ]
+
   avg_params= colMeans(params)
   all.params = results$model$get_all_parameters(params = avg_params,
                                                 fct_model_antibody_increase = results$model$fct_model_antibody_increase,
@@ -152,7 +157,7 @@ compute_DIC <- function(results, burn_in){
   loglik = results$loglik[-seq(1,burn_in)]
 
   avg_deviance = mean(-2*loglik)
-  deviance_avg_params = -2*results$model$compute_loglik(all.params)
+  deviance_avg_params = -2*results$model$compute_loglik(all.params, data)
   pD = avg_deviance-deviance_avg_params
   DIC = pD + avg_deviance
   return(list(pD = pD,
@@ -166,4 +171,21 @@ quantile025 <- function(X){
 
 quantile975 <- function(X){
   return(as.numeric(quantile(X, probs=0.975 )))
+}
+
+################################################################################
+# Log-likelihood
+################################################################################
+
+compute_loglik <- function(all.params,data) {
+
+  prob.titers =  left_join(all.params$titer.distribution,
+                           data,
+                           by = c("birth.year", "age", "titer.class", "sampling.year"))  %>%
+    group_by(age, sampling.year) %>%
+    summarise(ll  = dmultinom(x = n,prob = obs.proportion, log=TRUE), .groups='drop')  %>%
+    summarise(s= sum(ll))
+
+  return(prob.titers$s)
+
 }

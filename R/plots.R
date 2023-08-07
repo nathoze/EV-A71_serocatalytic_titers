@@ -1,11 +1,13 @@
 # plot the fits of the model to the data
 # simulate data from the posterior distribution
 
-plot_fit <- function(results, burn_in, data = data.EV71.Malaysia){
+plot_fit <- function(results, burn_in){
 
+  data = results$data
   params = results$params[-seq(1,burn_in),]
   n.sim = 100
-  # --> summarise data : get total number by age group and sampling year
+
+   # --> summarise data : get total number by age group and sampling year
 
   #indices = sample(x = seq(1,nrow(params)), n.sim)
   par <- colMeans(params)
@@ -19,7 +21,7 @@ plot_fit <- function(results, burn_in, data = data.EV71.Malaysia){
   A = left_join(td, data, by = c("birth.year", "age", "titer.class", "sampling.year")) %>%
     group_by(age, sampling.year) %>%
     mutate(N = sum(n)) %>%
-    mutate(simul.titer = rmultinom(n = 100, size = N,prob = obs.proportion)*titer.class/N ) %>%
+    mutate(simul.titer = rmultinom(n = n.sim, size = N,prob = obs.proportion)*titer.class/N ) %>%
     summarise(mean.titer.sim=colSums(simul.titer))
 
   data2=data %>%

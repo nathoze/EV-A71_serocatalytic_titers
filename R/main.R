@@ -5,6 +5,8 @@ library(tidyr)
 library(ggplot2)
 library(tidyverse)
 library(purrr)
+library(Hmisc)
+
 source("R/Model_EV71.R")
 source("R/utils.R")
 source("R/FOI_models.R")
@@ -45,23 +47,6 @@ Titers.0 <- c(1,rep(0,N.titers-1)) # probability distribution of the titers at b
 
 
 ################################################################################
-# Log-likelihood
-################################################################################
-
-compute_loglik <- function(all.params) {
-
-  prob.titers =  left_join(all.params$titer.distribution, data.EV71.Malaysia,
-                           by = c("birth.year", "age", "titer.class", "sampling.year"))  %>%
-    group_by(age, sampling.year) %>%
-    summarise(ll  = dmultinom(x = n,prob = obs.proportion, log=TRUE), .groups='drop')  %>%
-    summarise(s= sum(ll))
-
-  return(prob.titers$s)
-
-}
-
-
-################################################################################
 # MCMC
 ################################################################################
 
@@ -70,65 +55,7 @@ mcmc_steps <- 120
 mcmc_adaptive_steps <- 50
 
 
-
-
-# Example 1: Specify a constant Model ----
-
-params0  = c( 0.3, 3,1)
-
-params0=c(0.4427671, 1.1189196, 1.73814652)
-inds_to_update <- 1:length(params0) # Here we update all the parameters
-model_constant = list(compute_loglik = compute_loglik,
-                      params0 = params0,
-                      inds_to_update = inds_to_update,
-                      is_invalid = is_invalid_model_constant,
-                      get_all_parameters = get_all_parameters_model_constant,
-                      update_all_parameters = update_all_parameters_model_constant)
-mcmc_adaptive_steps=3000
-
-mcmc_steps = 5000
-
-res <-  run_MCMC_specify_model(model = model_constant,
-                               mcmc_steps = mcmc_steps,
-                               mcmc_adaptive_steps = mcmc_adaptive_steps,
-                               verbose = TRUE)
-
-
-
-
-# res$model$compute_loglik(res$model$get_all_parameters(res$model$params0))
-
-
-# Example 2: Constant FOI in periods of five years -----
-#
-# params0  = c( rep(0.3,6), 3,1)
-# params0  = c(  runif(n  = round(N.FOI/5), max = 0.7), 3,1)
-#
-# params0= c( 0.5 , 0.5, 0.4, 0.3, 0.3687840, 0.3943001, 1, 1.5)
-#
-# params0=c(1.2944222, 0.3230752, 0.6266874, 0.4429604, 0.6127554, 0.7394369, 0.9057352, 2.7328078)
-# n_params = length(params0)
-# inds_to_update <- 1:length(params0) # Here we update all the parameters
-#
-# model_five_years= list(compute_loglik = compute_loglik,
-#                        params0 = params0,
-#                        inds_to_update = inds_to_update,
-#                        is_invalid = is_invalid_model_five_years,
-#                        get_all_parameters = get_all_parameters_model_five_years,
-#                        update_all_parameters = update_all_parameters_model_five_years)
-#
-# res <-  run_MCMC_specify_model(model = model_five_years,
-#                                mcmc_steps = mcmc_steps,
-#                                mcmc_adaptive_steps = mcmc_adaptive_steps,
-#                                verbose = TRUE)
-#
-# model_five_years$compute_loglik(all.params = model_five_years$get_all_parameters(params0))
-
-
-
-## redefine models
-
-
+# Example 1: Constant Model for the FOI ----
 
 params0=c(0.4427671, 1.1189196, 1.73814652)
 inds_to_update <- 1:length(params0)
@@ -137,20 +64,42 @@ model_constant  =  define_model(fct_model_antibody_increase = get_increase_matri
                                 compute_loglik = compute_loglik,
                                 params0 = params0,
                                 inds_to_update = inds_to_update,
-                              #  FOI_model = 'constant',
+                                #  FOI_model = 'constant',
                                 is_invalid = is_invalid_model_constant,
                                 get_all_parameters = get_all_parameters_model_constant,
                                 update_all_parameters = update_all_parameters_model_constant)
 
 
 res <-  run_MCMC_specify_model(model = model_constant,
-                               mcmc_steps = 5000,
-                               mcmc_adaptive_steps = 3000,
+                               data = data.EV71.Malaysia,
+                               mcmc_steps = mcmc_steps,
+                               mcmc_adaptive_steps = mcmc_adaptive_steps,
                                verbose = TRUE)
-#  saveRDS(res, file='results/Model_5years.rds')
+
+saveRDS(res, file='results/Model_constant.rds')
+
+# Example 2: Model with FOI constant in periods of 5 years ----
+
+params0=c(1.2944222, 0.3230752, 0.6266874, 0.4429604, 0.6127554, 0.7394369, 0.9057352, 2.7328078)
+n_params = length(params0)
+inds_to_update <- 1:length(params0) # Here we update all the parameters
+model_five_years= list(compute_loglik = compute_loglik,
+                       params0 = params0,
+                       inds_to_update = inds_to_update,
+                       is_invalid = is_invalid_model_five_years,
+                       get_all_parameters = get_all_parameters_model_five_years,
+                       update_all_parameters = update_all_parameters_model_five_years)
+
+res <-  run_MCMC_specify_model(model = model_five_years,
+                               mcmc_steps = mcmc_steps,
+                               mcmc_adaptive_steps = mcmc_adaptive_steps,
+                               verbose = TRUE)
+
+saveRDS(res, file='results/Model_5years.rds')
 
 
-# Independent model
+# Independent model ----
+
 params0  = c( runif(n  = N.FOI, max = 0.7) , 3,1)
 inds_to_update <- 1:length(params0)
 model_independent =  define_model(fct_model_antibody_increase = get_increase_matrix,
@@ -164,18 +113,21 @@ model_independent =  define_model(fct_model_antibody_increase = get_increase_mat
 
 
 res <-  run_MCMC_specify_model(model = model_independent,
-                               mcmc_steps = 10,
-                               mcmc_adaptive_steps = 10,
+                               data = data.EV71.Malaysia,
+                               mcmc_steps = mcmc_steps,
+                               mcmc_adaptive_steps = mcmc_adaptive_steps,
                                verbose = TRUE)
 
-
-
+saveRDS(res, file='results/Model_independent.rds')
 
 # Plot -----
 
 res = readRDS(file='results/Model_5years.rds')
 compute_DIC(res, burn_in = 3000)
 
+
+res= readRDS(file='results/Model_independent.rds')
+compute_DIC(res, burn_in = 50)
 
 res= readRDS(file='results/Model_constant.rds')
 compute_DIC(res, burn_in = 3000)
@@ -185,7 +137,7 @@ plot(res$accept[,3], type='l')
 plot(res$params[,7], type='l')
 plot(res$loglik, type='l')
 
-plot_fit(res, 3000)
+plot_fit(res, 10)
 
 
 burn_in <- mcmc_adaptive_steps
