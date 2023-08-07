@@ -120,15 +120,29 @@ run_MCMC_specify_model <- function(model,
 
 define_model <- function(fct_model_antibody_increase = get_increase_matrix,
                          fct_model_antibody_decrease = get_decay_matrix,
-                         # fct_model_foi,
+                         model_foi =  'constant',
                          compute_loglik,
                          params0,
-                         inds_to_update,
-                         is_invalid,
-                         get_all_parameters,
-                         update_all_parameters){
+                         inds_to_update){
 
   source('R/FOI_models.R') # when sourcing we redefine the different functions
+
+  if(model_foi == 'constant'){
+    is_invalid = is_invalid_model_constant
+    get_all_parameters = get_all_parameters_model_constant
+    update_all_parameters = update_all_parameters_model_constant
+  }
+  if(model_foi == '5years'){
+    is_invalid = is_invalid_model_five_years
+    get_all_parameters = get_all_parameters_model_five_years
+    update_all_parameters = update_all_parameters_model_five_years
+  }
+  if(model_foi == 'independent'){
+    is_invalid = is_invalid_model_independent
+    get_all_parameters = get_all_parameters_model_independent
+    update_all_parameters = update_all_parameters_model_independent
+  }
+
 
 
   model = list(fct_model_antibody_increase = fct_model_antibody_increase,
@@ -173,10 +187,8 @@ quantile975 <- function(X){
   return(as.numeric(quantile(X, probs=0.975 )))
 }
 
-################################################################################
-# Log-likelihood
-################################################################################
 
+# Log likelihood
 compute_loglik <- function(all.params,data) {
 
   prob.titers =  left_join(all.params$titer.distribution,

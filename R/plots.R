@@ -1,38 +1,43 @@
 # plot the fits of the model to the data
 # simulate data from the posterior distribution
 
-plot_fit <- function(results, burn_in){
 
-  data = results$data
-  params = results$params[-seq(1,burn_in),]
-  n.sim = 100
+simulate_titers <-function(k, results){
 
-   # --> summarise data : get total number by age group and sampling year
-
-  #indices = sample(x = seq(1,nrow(params)), n.sim)
-  par <- colMeans(params)
-
+  par <- results$params[k,]
   all.params = results$model$get_all_parameters(params = par,
                                                 fct_model_antibody_increase = results$model$fct_model_antibody_increase,
                                                 fct_model_antibody_decrease = results$model$fct_model_antibody_decrease)
 
-  td= all.params$titer.distribution
+  td = all.params$titer.distribution
 
-  A = left_join(td, data, by = c("birth.year", "age", "titer.class", "sampling.year")) %>%
+  A = left_join(td, results$data, by = c("birth.year", "age", "titer.class", "sampling.year")) %>%
     group_by(age, sampling.year) %>%
     mutate(N = sum(n)) %>%
-    mutate(simul.titer = rmultinom(n = n.sim, size = N,prob = obs.proportion)*titer.class/N ) %>%
-    summarise(mean.titer.sim=colSums(simul.titer))
+    mutate(simul.titer = rmultinom(n = 1, size = N,prob = obs.proportion)*titer.class/N ) %>%
+    summarise(mean.titer.sim=colSums(simul.titer)) #%>% mutate(index = k)
 
-  data2=data %>%
+  return(A)
+
+}
+
+
+
+plot_fit <- function(results, burn_in, n.sim=50){
+
+  data = results$data%>%
     group_by(age, sampling.year) %>%
     mutate(N = sum(n)) %>%
-    mutate(mean.titer.obs = sum(titer.class*n)/N)   %>%
+    mutate(mean.titer.obs = sum(titer.class*n)/N) %>%
     select(sampling.year,age , mean.titer.obs )
 
+  params = results$params[-seq(1,burn_in),]
+  indices = sample(x = seq(1,nrow(params)), n.sim)
 
-  g= A %>%
-    left_join(data2, by = c( "age", "sampling.year")) %>%
+  g =indices %>%
+    map(simulate_titers, results= results) %>%
+    bind_rows() %>%
+    left_join(data , by = c( "age", "sampling.year")) %>%
     ggplot()+
     stat_summary(aes(x=age, y = mean.titer.sim),
                  fun.data=mean_sdl, fun.args = list(mult=1),
@@ -41,11 +46,10 @@ plot_fit <- function(results, burn_in){
     geom_point(aes(x=age, y = mean.titer.obs)) +
     facet_wrap(  vars(sampling.year))+
     scale_x_continuous(breaks=seq(1,12))+
+    ylab('log2 Titer')+
     theme_bw()+
-    facet_wrap(  vars(sampling.year))
+    facet_wrap(vars(sampling.year))
 
   return(g)
-
-
 
 }

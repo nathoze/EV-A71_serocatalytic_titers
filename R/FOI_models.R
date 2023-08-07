@@ -112,7 +112,7 @@ get_all_parameters_model_five_years <- function(params, fct_model_antibody_incre
 }
 is_invalid_model_five_years <- function(k, value) { # Function that checks if parameter value is invalid
   if (value <10e-9) { return(TRUE) } # All the parameters must be > 0
-  if (k<=6  & value >2) { return(TRUE) } # the foi
+  if (k <= N.FOI/5  & value >2) { return(TRUE) } # the foi
   if (k == 7 & value >8) { return(TRUE) }# sigmaP
   if (k == 8 & value >8) { return(TRUE) }# Omega
   FALSE

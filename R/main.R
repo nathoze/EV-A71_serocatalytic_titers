@@ -26,7 +26,6 @@ data.EV71.Malaysia <- data.EV71.Malaysia %>%
 # Parameters
 ################################################################################
 
-
 min.year.sampling <- min(data.EV71.Malaysia$sampling.year)
 max.year.sampling <- max(data.EV71.Malaysia$sampling.year)
 sampling.years = seq(min.year.sampling, max.year.sampling)
@@ -44,16 +43,12 @@ titer.observable.max = max(data.EV71.Malaysia$titer.class)
 N.titers = 10 # the number of possible values of the titers
 Titers.0 <- c(1,rep(0,N.titers-1)) # probability distribution of the titers at birth (everybody is seronegative at birth)
 
-
-
 ################################################################################
 # MCMC
 ################################################################################
 
-
 mcmc_steps <- 120
 mcmc_adaptive_steps <- 50
-
 
 # Example 1: Constant Model for the FOI ----
 
@@ -64,10 +59,7 @@ model_constant  =  define_model(fct_model_antibody_increase = get_increase_matri
                                 compute_loglik = compute_loglik,
                                 params0 = params0,
                                 inds_to_update = inds_to_update,
-                                #  FOI_model = 'constant',
-                                is_invalid = is_invalid_model_constant,
-                                get_all_parameters = get_all_parameters_model_constant,
-                                update_all_parameters = update_all_parameters_model_constant)
+                                model_foi = 'constant')
 
 
 res <-  run_MCMC_specify_model(model = model_constant,
@@ -83,14 +75,15 @@ saveRDS(res, file='results/Model_constant.rds')
 params0=c(1.2944222, 0.3230752, 0.6266874, 0.4429604, 0.6127554, 0.7394369, 0.9057352, 2.7328078)
 n_params = length(params0)
 inds_to_update <- 1:length(params0) # Here we update all the parameters
-model_five_years= list(compute_loglik = compute_loglik,
-                       params0 = params0,
-                       inds_to_update = inds_to_update,
-                       is_invalid = is_invalid_model_five_years,
-                       get_all_parameters = get_all_parameters_model_five_years,
-                       update_all_parameters = update_all_parameters_model_five_years)
+model_five_years =  define_model(fct_model_antibody_increase = get_increase_matrix,
+                                  fct_model_antibody_decrease = get_decay_matrix,
+                                  compute_loglik = compute_loglik,
+                                  params0 = params0,
+                                  inds_to_update = inds_to_update,
+                                  model_foi = "5years")
 
 res <-  run_MCMC_specify_model(model = model_five_years,
+                               data = data.EV71.Malaysia,
                                mcmc_steps = mcmc_steps,
                                mcmc_adaptive_steps = mcmc_adaptive_steps,
                                verbose = TRUE)
@@ -107,9 +100,7 @@ model_independent =  define_model(fct_model_antibody_increase = get_increase_mat
                                   compute_loglik = compute_loglik,
                                   params0 = params0,
                                   inds_to_update = inds_to_update,
-                                  is_invalid = is_invalid_model_independent,
-                                  get_all_parameters = get_all_parameters_model_independent,
-                                  update_all_parameters = update_all_parameters_model_independent)
+                                  model_foi = "independent")
 
 
 res <-  run_MCMC_specify_model(model = model_independent,
@@ -138,7 +129,6 @@ plot(res$params[,7], type='l')
 plot(res$loglik, type='l')
 
 plot_fit(res, 10)
-
 
 burn_in <- mcmc_adaptive_steps
 thinning <- seq(burn_in + 1, mcmc_steps, by = 50)
