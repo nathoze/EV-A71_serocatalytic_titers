@@ -4,11 +4,11 @@ library(dplyr)
 library(tidyr)
 library(ggplot2)
 library(tidyverse)
-
+library(purrr)
 source("R/Model_EV71.R")
 source("R/utils.R")
 source("R/FOI_models.R")
-
+source("R/plots.R")
 
 ################################################################################
 # Data : EV71 in Malaysia 1995 -> 2012
@@ -37,7 +37,6 @@ birth.years = seq(min.year.sampling-age.max, max.year.sampling)
 
 #start.sampling.year = age.max
 N.titer.sets = age.max*N.sampling.years
-
 titer.observable.max = max(data.EV71.Malaysia$titer.class)
 
 N.titers = 10 # the number of possible values of the titers
@@ -145,9 +144,10 @@ model_constant  =  define_model(fct_model_antibody_increase = get_increase_matri
 
 
 res <-  run_MCMC_specify_model(model = model_constant,
-                               mcmc_steps = 10,
-                               mcmc_adaptive_steps = 10,
+                               mcmc_steps = 5000,
+                               mcmc_adaptive_steps = 3000,
                                verbose = TRUE)
+#  saveRDS(res, file='results/Model_5years.rds')
 
 
 # Independent model
@@ -173,12 +173,20 @@ res <-  run_MCMC_specify_model(model = model_independent,
 
 # Plot -----
 
-res = readRDS(file='results/Model5years.rds')
+res = readRDS(file='results/Model_5years.rds')
+compute_DIC(res, burn_in = 3000)
+
+
+res= readRDS(file='results/Model_constant.rds')
+compute_DIC(res, burn_in = 3000)
 
 plot(res$params[-seq(1,3000),2], type='l')
 plot(res$accept[,3], type='l')
 plot(res$params[,7], type='l')
 plot(res$loglik, type='l')
+
+plot_fit(res, 3000)
+
 
 burn_in <- mcmc_adaptive_steps
 thinning <- seq(burn_in + 1, mcmc_steps, by = 50)

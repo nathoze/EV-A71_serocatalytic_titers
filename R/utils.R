@@ -1,5 +1,4 @@
 
-
 run_MCMC_specify_model <- function(model,
                                    proposal_type = NULL,
                                    mcmc_steps = 1000, mcmc_adaptive_steps = 100,
@@ -22,7 +21,7 @@ run_MCMC_specify_model <- function(model,
   params <- matrix(0, ncol = n_params, nrow = mcmc_steps) # Parameters
   params[1, ] <- params0
 
-print(get_all_parameters)
+  print(get_all_parameters)
   all.params = get_all_parameters(params0, fct_model_antibody_increase,fct_model_antibody_decrease)
 
   old.all.params = all.params
@@ -120,13 +119,13 @@ print(get_all_parameters)
 
 define_model <- function(fct_model_antibody_increase = get_increase_matrix,
                          fct_model_antibody_decrease = get_decay_matrix,
-                        # fct_model_foi,
+                         # fct_model_foi,
                          compute_loglik,
                          params0,
                          inds_to_update,
                          is_invalid,
-                       get_all_parameters,
-                        update_all_parameters){
+                         get_all_parameters,
+                         update_all_parameters){
 
   source('R/FOI_models.R') # when sourcing we redefine the different functions
 
@@ -140,4 +139,31 @@ define_model <- function(fct_model_antibody_increase = get_increase_matrix,
                get_all_parameters = get_all_parameters,
                update_all_parameters = update_all_parameters)
   return(model)
+}
+
+compute_DIC <- function(results, burn_in){
+  #https://en.wikipedia.org/wiki/Deviance_information_criterion
+  params = results$params[-seq(1,burn_in), ]
+  avg_params= colMeans(params)
+  all.params = results$model$get_all_parameters(params = avg_params,
+                                                fct_model_antibody_increase = results$model$fct_model_antibody_increase,
+                                                fct_model_antibody_decrease = results$model$fct_model_antibody_decrease)
+
+  loglik = results$loglik[-seq(1,burn_in)]
+
+  avg_deviance = mean(-2*loglik)
+  deviance_avg_params = -2*results$model$compute_loglik(all.params)
+  pD = avg_deviance-deviance_avg_params
+  DIC = pD + avg_deviance
+  return(list(pD = pD,
+              DIC = DIC))
+}
+
+
+quantile025 <- function(X){
+  return(as.numeric(quantile(X, probs=0.025 )))
+}
+
+quantile975 <- function(X){
+  return(as.numeric(quantile(X, probs=0.975 )))
 }
