@@ -5,7 +5,7 @@
 # list the functions to be changed here
 
 
-# Only one parameter for the FOI in the constant model
+# Only one parameter for the FOI in the constant model ----
 update_all_parameters_model_constant <- function(old.all.parameters, new.param, updated_index, fct_model_antibody_increase, fct_model_antibody_decrease){
 
   new.all.parameters = old.all.parameters
@@ -16,7 +16,7 @@ update_all_parameters_model_constant <- function(old.all.parameters, new.param, 
     for(j in 1:N.FOI){
       new.all.parameters$transition.matrices[[j]] = (1-p)*new.all.parameters$decay.matrix+p*new.all.parameters$increase.matrix
     }
-  #  new.all.parameters$transition.matrices[[updated_index]] = (1-p)*new.all.parameters$decay.matrix+p*new.all.parameters$increase.matrix
+    #  new.all.parameters$transition.matrices[[updated_index]] = (1-p)*new.all.parameters$decay.matrix+p*new.all.parameters$increase.matrix
   }
 
   if(updated_index >= 2){ #  Increase  or decay parameter
@@ -36,7 +36,7 @@ get_all_parameters_model_constant <- function(params, fct_model_antibody_increas
 
   transition.matrices = NULL
   for(i in 1:N.FOI){
-     transition.matrices[[i]] = (1-p)*decay.matrix+p*increase.matrix
+    transition.matrices[[i]] = (1-p)*decay.matrix+p*increase.matrix
   }
 
   titer.distribution = titer_distribution(transition.matrices)
@@ -55,13 +55,12 @@ get_all_parameters_model_constant <- function(params, fct_model_antibody_increas
 is_invalid_model_constant <- function(k, value) { # Function that checks if parameter value is invalid
   if (value <10e-9) { return(TRUE) } # All the parameters must be > 0
   if (k == 1 & value >2) { return(TRUE) } # the foi
-  if (k == 2 & value >8) { return(TRUE) }# sigmaP
-  if (k == 3 & value >8) { return(TRUE) }# Omega
+  if (k > 1 & value >8) { return(TRUE) }# sigmaP
   FALSE
 }
 
 
-# Model where the FOI is constant during five years
+# Model where the FOI is constant during five years ----
 
 update_all_parameters_model_five_years <- function(old.all.parameters, new.param, updated_index, fct_model_antibody_increase, fct_model_antibody_decrease){
 
@@ -74,7 +73,7 @@ update_all_parameters_model_five_years <- function(old.all.parameters, new.param
     for(k in seq( (updated_index-1)*5+1,(updated_index)*5) ){
       new.all.parameters$transition.matrices[[k]] = (1-p)*new.all.parameters$decay.matrix+p*new.all.parameters$increase.matrix
     }
- #   new.all.parameters$transition.matrices[[updated_index]] = (1-p)*new.all.parameters$decay.matrix+p*new.all.parameters$increase.matrix
+    #   new.all.parameters$transition.matrices[[updated_index]] = (1-p)*new.all.parameters$decay.matrix+p*new.all.parameters$increase.matrix
   }
 
   if(updated_index > round(N.FOI/5)){ #  Increase  or decay parameter
@@ -113,16 +112,16 @@ get_all_parameters_model_five_years <- function(params, fct_model_antibody_incre
 is_invalid_model_five_years <- function(k, value) { # Function that checks if parameter value is invalid
   if (value <10e-9) { return(TRUE) } # All the parameters must be > 0
   if (k <= N.FOI/5  & value >2) { return(TRUE) } # the foi
-  if (k == 7 & value >8) { return(TRUE) }# sigmaP
-  if (k == 8 & value >8) { return(TRUE) }# Omega
+  if (k > N.FOI/5  & value >8) { return(TRUE) }# sigmaP
   FALSE
 }
 
-
+# Model where there is as many FOI as birth years ----
 get_all_parameters_model_independent <- function(params, fct_model_antibody_increase, fct_model_antibody_decrease){
 
-  increase.matrix=get_increase_matrix(N.titers  = N.titers, sigma.P = params[N.FOI+1])
-  decay.matrix=get_decay_matrix(N.titers = N.titers, omega = params[N.FOI+2])
+  increase.matrix=fct_model_antibody_increase(N.titers  = N.titers, sigma.P = head(tail(params, n=2), n=1))
+  decay.matrix=fct_model_antibody_decrease(N.titers = N.titers, omega = tail(params,1))
+
   transition.matrices = NULL
 
   for(i in 1:N.FOI){
@@ -177,4 +176,78 @@ is_invalid_model_independent <- function(k, value) { # Function that checks if p
   #if (k == N.FOI+2 & value >8) { return(TRUE) }# Omega
   FALSE
 }
+
+
+# Model with a peak and a constant FOI ----
+get_all_parameters_model_peak_constant <- function(params, fct_model_antibody_increase, fct_model_antibody_decrease){
+
+  # params[1] : constant FOI
+  # round(params[2]) : year of the peak
+  # params[3]: increase
+
+  increase.matrix=fct_model_antibody_increase(N.titers  = N.titers, sigma.P = head(tail(params, n=2), n=1))
+  decay.matrix=fct_model_antibody_decrease(N.titers = N.titers, omega = tail(params,1))
+
+  transition.matrices = NULL
+
+  p1 = infection_probability(params[1])
+  p2 = infection_probability(params[1]+params[3])
+
+  transition.matrices = NULL
+  for(i in 1:N.FOI){
+    transition.matrices[[i]] = (1-p1)*decay.matrix+p1*increase.matrix
+    if(i == round(params[2]))
+      transition.matrices[[i]] = (1-p2)*decay.matrix+p2*increase.matrix
+  }
+
+
+  titer.distribution = titer_distribution(transition.matrices)
+
+  all.parameters = list(increase.matrix = increase.matrix,
+                        decay.matrix = decay.matrix,
+                        transition.matrices = transition.matrices,
+                        titer.distribution = titer.distribution,
+                        params = params)
+
+
+  return(all.parameters)
+
+}
+update_all_parameters_model_peak_constant <- function(old.all.parameters, new.param, updated_index, fct_model_antibody_increase, fct_model_antibody_decrease){
+
+  new.all.parameters = old.all.parameters
+  new.all.parameters$params[updated_index] = new.param
+  new.all.parameters = get_all_parameters_model_peak_constant(new.all.parameters$params, fct_model_antibody_increase, fct_model_antibody_decrease)
+  #
+  # if(updated_index <= 3){ # We change the foi
+  #   p = infection_probability(new.param)
+  #   new.all.parameters$transition.matrices[[updated_index]] = (1-p)*new.all.parameters$decay.matrix+p*new.all.parameters$increase.matrix
+  #
+  # }
+  #
+  # if(updated_index >= 4){ #  Increase  or decay parameter
+  #   new.all.parameters = get_all_parameters_model_independent(new.all.parameters$params, fct_model_antibody_increase, fct_model_antibody_decrease)
+  # }
+
+  new.all.parameters$titer.distribution = titer_distribution(new.all.parameters$transition.matrices)
+
+  return(new.all.parameters)
+
+}
+is_invalid_model_peak_constant <- function(k, value) { # Function that checks if parameter value is invalid
+  if (value <10e-9) { return(TRUE) } # All the parameters must be > 0
+  if (k==1 & value >2) { return(TRUE) } # the foi
+  if (k==2 & value > N.FOI) { return(TRUE) } # the year of the peak
+  if (k==3 & value >2) { return(TRUE) } # the foi at the peak
+  if (k >= 4 & value >8) { return(TRUE) }# sigmaP, Omega
+  #if (k == N.FOI+2 & value >8) { return(TRUE) }# Omega
+  FALSE
+}
+
+
+
+
+
+
+
 

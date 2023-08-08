@@ -1,10 +1,10 @@
 
-run_MCMC_specify_model <- function(model,
-                                   data,
-                                   proposal_type = NULL,
-                                   mcmc_steps = 1000, mcmc_adaptive_steps = 100,
-                                   sd_proposal = NULL, opt_acceptance = 0.24,
-                                   verbose = FALSE) {
+run_MCMC <- function(model,
+                     data,
+                     proposal_type = NULL,
+                     mcmc_steps = 1000, mcmc_adaptive_steps = 100,
+                     sd_proposal = NULL, opt_acceptance = 0.24,
+                     verbose = FALSE) {
 
   compute_loglik = model$compute_loglik
   is_invalid = model$is_invalid
@@ -26,8 +26,6 @@ run_MCMC_specify_model <- function(model,
   all.params = get_all_parameters(params0, fct_model_antibody_increase,fct_model_antibody_decrease)
 
   old.all.params = all.params
-
-
 
   # Default choices when argument is NULL
   if (is.null(proposal_type)) { # Lognormal proposal for all parameters
@@ -72,7 +70,12 @@ run_MCMC_specify_model <- function(model,
       }
 
       # Update the transformed parameters
-      new.all.params <-  update_all_parameters(old.all.params,new.param = new_param, updated_index = k, fct_model_antibody_increase, fct_model_antibody_decrease )
+      new.all.params <-  update_all_parameters(old.all.params,
+                                               new.param = new_param,
+                                               updated_index = k,
+                                               fct_model_antibody_increase,
+                                               fct_model_antibody_decrease)
+
       params[step, ] = new.all.params$params
 
       new_loglik <- compute_loglik(new.all.params,data)
@@ -142,8 +145,11 @@ define_model <- function(fct_model_antibody_increase = get_increase_matrix,
     get_all_parameters = get_all_parameters_model_independent
     update_all_parameters = update_all_parameters_model_independent
   }
-
-
+  if(model_foi == 'peak_constant'){
+    is_invalid = is_invalid_model_peak_constant
+    get_all_parameters = get_all_parameters_model_peak_constant
+    update_all_parameters = update_all_parameters_model_peak_constant
+  }
 
   model = list(fct_model_antibody_increase = fct_model_antibody_increase,
                fct_model_antibody_decrease = fct_model_antibody_decrease,

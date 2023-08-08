@@ -54,7 +54,7 @@ mcmc_adaptive_steps <- 50
 
 params0=c(0.4427671, 1.1189196, 1.73814652)
 inds_to_update <- 1:length(params0)
-model_constant  =  define_model(fct_model_antibody_increase = get_increase_matrix,
+model.constant  =  define_model(fct_model_antibody_increase = get_increase_matrix,
                                 fct_model_antibody_decrease = get_decay_matrix,
                                 compute_loglik = compute_loglik,
                                 params0 = params0,
@@ -62,11 +62,11 @@ model_constant  =  define_model(fct_model_antibody_increase = get_increase_matri
                                 model_foi = 'constant')
 
 
-res <-  run_MCMC_specify_model(model = model_constant,
-                               data = data.EV71.Malaysia,
-                               mcmc_steps = mcmc_steps,
-                               mcmc_adaptive_steps = mcmc_adaptive_steps,
-                               verbose = TRUE)
+res <-  run_MCMC(model = model.constant,
+                 data = data.EV71.Malaysia,
+                 mcmc_steps = mcmc_steps,
+                 mcmc_adaptive_steps = mcmc_adaptive_steps,
+                 verbose = TRUE)
 
 saveRDS(res, file='results/Model_constant.rds')
 
@@ -75,27 +75,27 @@ saveRDS(res, file='results/Model_constant.rds')
 params0=c(1.2944222, 0.3230752, 0.6266874, 0.4429604, 0.6127554, 0.7394369, 0.9057352, 2.7328078)
 n_params = length(params0)
 inds_to_update <- 1:length(params0) # Here we update all the parameters
-model_five_years =  define_model(fct_model_antibody_increase = get_increase_matrix,
-                                  fct_model_antibody_decrease = get_decay_matrix,
-                                  compute_loglik = compute_loglik,
-                                  params0 = params0,
-                                  inds_to_update = inds_to_update,
-                                  model_foi = "5years")
+model.five.years =  define_model(fct_model_antibody_increase = get_increase_matrix,
+                                 fct_model_antibody_decrease = get_decay_matrix,
+                                 compute_loglik = compute_loglik,
+                                 params0 = params0,
+                                 inds_to_update = inds_to_update,
+                                 model_foi = "5years")
 
-res <-  run_MCMC_specify_model(model = model_five_years,
-                               data = data.EV71.Malaysia,
-                               mcmc_steps = mcmc_steps,
-                               mcmc_adaptive_steps = mcmc_adaptive_steps,
-                               verbose = TRUE)
+res <-  run_MCMC(model = model.five.years,
+                 data = data.EV71.Malaysia,
+                 mcmc_steps = mcmc_steps,
+                 mcmc_adaptive_steps = mcmc_adaptive_steps,
+                 verbose = TRUE)
 
 saveRDS(res, file='results/Model_5years.rds')
 
 
-# Independent model ----
+# Example 3: Independent model ----
 
 params0  = c( runif(n  = N.FOI, max = 0.7) , 3,1)
 inds_to_update <- 1:length(params0)
-model_independent =  define_model(fct_model_antibody_increase = get_increase_matrix,
+model.independent =  define_model(fct_model_antibody_increase = get_increase_matrix,
                                   fct_model_antibody_decrease = get_decay_matrix,
                                   compute_loglik = compute_loglik,
                                   params0 = params0,
@@ -103,13 +103,38 @@ model_independent =  define_model(fct_model_antibody_increase = get_increase_mat
                                   model_foi = "independent")
 
 
-res <-  run_MCMC_specify_model(model = model_independent,
-                               data = data.EV71.Malaysia,
-                               mcmc_steps = mcmc_steps,
-                               mcmc_adaptive_steps = mcmc_adaptive_steps,
-                               verbose = TRUE)
+res <-  run_MCMC(model = model.independent,
+                 data = data.EV71.Malaysia,
+                 mcmc_steps = mcmc_steps,
+                 mcmc_adaptive_steps = mcmc_adaptive_steps,
+                 verbose = TRUE)
 
 saveRDS(res, file='results/Model_independent.rds')
+
+
+# Example 4: Peak+constant model ----
+
+params0  = c( 0.1,20,0.5, 3,1)
+inds_to_update <- 1:length(params0)
+model.peak.constant =  define_model(fct_model_antibody_increase = get_increase_matrix,
+                                    fct_model_antibody_decrease = get_decay_matrix,
+                                    compute_loglik = compute_loglik,
+                                    params0 = params0,
+                                    inds_to_update = inds_to_update,
+                                    model_foi = "peak_constant")
+
+
+res <-  run_MCMC(model = model.peak.constant,
+                 data = data.EV71.Malaysia,
+                 mcmc_steps = mcmc_steps,
+                 mcmc_adaptive_steps = mcmc_adaptive_steps,
+                 verbose = TRUE)
+
+saveRDS(res, file='results/Model_peak_constant.rds')
+
+
+
+
 
 # Plot -----
 

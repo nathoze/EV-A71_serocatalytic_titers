@@ -2,7 +2,7 @@
 # simulate data from the posterior distribution
 
 
-simulate_titers <-function(k, results){
+simulate_mean_posterior_titer <-function(k, results){
 
   par <- results$params[k,]
   all.params = results$model$get_all_parameters(params = par,
@@ -21,8 +21,6 @@ simulate_titers <-function(k, results){
 
 }
 
-
-
 plot_fit <- function(results, burn_in, n.sim=50){
 
   data = results$data%>%
@@ -33,9 +31,9 @@ plot_fit <- function(results, burn_in, n.sim=50){
 
   params = results$params[-seq(1,burn_in),]
   indices = sample(x = seq(1,nrow(params)), n.sim)
-
-  g =indices %>%
-    map(simulate_titers, results= results) %>%
+  # simulate titers with parameter from the posterior distribution
+  g = indices %>%
+    map(simulate_mean_posterior_titer, results= results) %>%
     bind_rows() %>%
     left_join(data , by = c( "age", "sampling.year")) %>%
     ggplot()+
@@ -46,8 +44,33 @@ plot_fit <- function(results, burn_in, n.sim=50){
     geom_point(aes(x=age, y = mean.titer.obs)) +
     facet_wrap(  vars(sampling.year))+
     scale_x_continuous(breaks=seq(1,12))+
+    ylim(c(0, 5))+
     ylab('log2 Titer')+
     theme_bw()+
+    facet_wrap(vars(sampling.year))
+
+  return(g)
+
+}
+
+plot_data <- function(data){
+
+  g = data%>%
+    group_by(age, sampling.year) %>%
+    mutate(N = sum(n)) %>%
+    mutate(mean.titer.obs = sum(titer.class*n)/N) %>%
+    select(sampling.year,age, mean.titer.obs) %>%
+    ggplot()+
+    geom_line(aes(x=age, y = mean.titer.obs)) +
+    geom_point(aes(x=age, y = mean.titer.obs)) +
+    facet_wrap(  vars(sampling.year))+
+    scale_x_continuous(breaks=seq(1,12))+
+    ylab('log2 Titer')+
+    ylim(c(0, 5))+
+    theme_bw()+
+ #   #theme(axis.text.x = element_text(size=14),
+      #                axis.text.y = element_text(  size=14),
+     #                 text=element_text(size=14))+
     facet_wrap(vars(sampling.year))
 
   return(g)
