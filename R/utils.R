@@ -158,7 +158,8 @@ define_model <- function(fct_model_antibody_increase = get_increase_matrix,
                inds_to_update = inds_to_update,
                is_invalid = is_invalid,
                get_all_parameters = get_all_parameters,
-               update_all_parameters = update_all_parameters)
+               update_all_parameters = update_all_parameters,
+               model_foi = model_foi)
   return(model)
 }
 

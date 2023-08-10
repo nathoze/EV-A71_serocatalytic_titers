@@ -7,7 +7,7 @@ library(tidyverse)
 library(purrr)
 library(Hmisc)
 
-source("R/Model_EV71.R")
+source("R/Model_EVA71.R")
 source("R/utils.R")
 source("R/FOI_models.R")
 source("R/plots.R")
@@ -42,6 +42,19 @@ titer.observable.max = max(data.EV71.Malaysia$titer.class)
 
 N.titers = 10 # the number of possible values of the titers
 Titers.0 <- c(1,rep(0,N.titers-1)) # probability distribution of the titers at birth (everybody is seronegative at birth)
+data.parameters = list(min.year.sampling = min.year.sampling,
+                       max.year.sampling = max.year.sampling,
+                       sampling.years = sampling.years,
+                       N.sampling.years = N.sampling.years,
+                       age.min = age.min,
+                       age.max = age.max,
+                       N.FOI = N.FOI,
+                       N.birth.years = N.birth.years,
+                       birth.years = birth.years,
+                       N.titer.sets = N.titer.sets,
+                       titer.observable.max = titer.observable.max,
+                       N.titers = N.titers,
+                       Titers.0 = Titers.0)
 
 ################################################################################
 # MCMC
@@ -139,24 +152,29 @@ saveRDS(res, file='results/Model_peak_constant.rds')
 # Plot -----
 
 res = readRDS(file='results/Model_5years.rds')
-compute_DIC(res, burn_in = 3000)
-
-
+compute_DIC(res, burn_in = 5000)
 res= readRDS(file='results/Model_independent.rds')
-compute_DIC(res, burn_in = 50)
-
+compute_DIC(res, burn_in = 5000)
 res= readRDS(file='results/Model_constant.rds')
-compute_DIC(res, burn_in = 3000)
+compute_DIC(res, burn_in = 5000)
+res= readRDS(file='results/Model_peak_constant.rds')
+compute_DIC(res, burn_in = 5000)
+res = readRDS(file='results/Model_5years_no_seroreversion.rds')
+compute_DIC(res, burn_in = 5000)
+res= readRDS(file='results/Model_independent_no_seroreversion.rds')
+compute_DIC(res, burn_in = 5000)
+res= readRDS(file='results/Model_constant_no_seroreversion.rds')
+compute_DIC(res, burn_in = 5000)
+res= readRDS(file='results/Model_peak_constant_no_seroreversion.rds')
+compute_DIC(res, burn_in = 5000)
 
-plot(res$params[-seq(1,3000),2], type='l')
-plot(res$accept[,3], type='l')
-plot(res$params[,7], type='l')
-plot(res$loglik, type='l')
+plot_fit(res, burn_in = 5000, n.sim = 30)
+plot_foi(res,burn_in = 5000, n.sim=200, show.attack.rate = TRUE)
+plot_foi(res,burn_in = 5000, n.sim=200, show.attack.rate = FALSE)
 
-plot_fit(res, 10)
-
-burn_in <- mcmc_adaptive_steps
-thinning <- seq(burn_in + 1, mcmc_steps, by = 50)
+mcmc_steps=10000
+burn_in <- 5000
+thinning <- seq(burn_in + 1, mcmc_steps, by = 5)
 chain <- res$params[thinning, ]
 
 # Visualize MCMC chain
@@ -170,39 +188,26 @@ chain %>%
   facet_wrap(~variable, scale = "free") +
   theme_bw() + theme(legend.position = "none")
 
-################################################################################
-# Simulate trajectories
-################################################################################
-n_sims <- 500
-tf_i_sims <- tf_i_model + 7
-chosen_inds <- sample(1:nrow(chain), n_sims)
-sims <- matrix(NA, nrow = tf_i_sims, ncol = n_sims)
-for (sim in 1:n_sims) {
-  chosen_ind <- chosen_inds[sim]
-  RHs <- c(chain[chosen_ind, 1])
-  pVOC_0 <- chain[chosen_ind, 2]
-  alphaVOC <- chain[chosen_ind, 3]
-  ps <- pVOC(tf_i_sims, alphaVOC, GT_mu, GT_cv, pVOC_0, RHs, change_points)
-  sims[, sim] <- ps
-}
 
-sims_plot <- tibble(
-  date = t0_model + seq_len(tf_i_sims),
-  the_mean = apply(sims, 1, mean),
-  lower = apply(sims, 1, quantile, probs = 0.025),
-  upper = apply(sims, 1, quantile, probs = 0.975)
-)
+## compare results ----
 
-data_plot <- tibble(
-  date = sampling_dates,
-  obs = c(data_mat[2] / data_mat[1], data_mat[4] / data_mat[3])
-)
 
-sims_plot %>%
-  ggplot() +
-  geom_ribbon(aes(x = date, ymin = lower, ymax = upper), fill = "dodgerblue3",
-              alpha = 0.3) +
-  geom_line(aes(x = date, y = the_mean), color = "dodgerblue4") +
-  geom_point(data = data_plot, aes(x = date, y = obs), size = 2) +
-  xlab("") + ylab("Prop VOC") +
-  theme_bw()
+res = readRDS(file='results/Model_5years_no_seroreversion.rds')
+print(paste0( round(quantile025(res$params[,ncol(res$params)-1]), digits=2),'  ', round(mean(res$params[,ncol(res$params)-1]), digits=2), '  ',round(quantile975(res$params[,ncol(res$params)-1]) , digits=2)) )
+res= readRDS(file='results/Model_independent_no_seroreversion.rds')
+print(paste0( round(quantile025(res$params[,ncol(res$params)-1]), digits=2),'  ', round(mean(res$params[,ncol(res$params)-1]), digits=2), '  ',round(quantile975(res$params[,ncol(res$params)-1]) , digits=2)) )
+res= readRDS(file='results/Model_constant_no_seroreversion.rds')
+print(paste0( round(quantile025(res$params[,ncol(res$params)-1]), digits=2),'  ', round(mean(res$params[,ncol(res$params)-1]), digits=2), '  ',round(quantile975(res$params[,ncol(res$params)-1]) , digits=2)) )
+res= readRDS(file='results/Model_peak_constant_no_seroreversion.rds')
+print(paste0( round(quantile025(res$params[,ncol(res$params)-1]), digits=2),'  ', round(mean(res$params[,ncol(res$params)-1]), digits=2), '  ',round(quantile975(res$params[,ncol(res$params)-1]) , digits=2)) )
+
+res = readRDS(file='results/Model_5years.rds')
+print(paste0( round(quantile025(res$params[,ncol(res$params)-1]), digits=2),'  ', round(mean(res$params[,ncol(res$params)-1]), digits=2), '  ',round(quantile975(res$params[,ncol(res$params)-1]) , digits=2)) )
+res= readRDS(file='results/Model_independent.rds')
+print(paste0( round(quantile025(res$params[,ncol(res$params)-1]), digits=2),'  ', round(mean(res$params[,ncol(res$params)-1]), digits=2), '  ',round(quantile975(res$params[,ncol(res$params)-1]) , digits=2)) )
+res= readRDS(file='results/Model_constant.rds')
+print(paste0( round(quantile025(res$params[,ncol(res$params)-1]), digits=2),'  ', round(mean(res$params[,ncol(res$params)-1]), digits=2), '  ',round(quantile975(res$params[,ncol(res$params)-1]) , digits=2)) )
+res= readRDS(file='results/Model_peak_constant.rds')
+print(paste0( round(quantile025(res$params[,ncol(res$params)-1]), digits=2),'  ', round(mean(res$params[,ncol(res$params)-1]), digits=2), '  ',round(quantile975(res$params[,ncol(res$params)-1]) , digits=2)) )
+
+
