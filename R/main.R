@@ -170,7 +170,7 @@ compute_DIC(res, burn_in = 5000)
 
 plot_fit(res, burn_in = 5000, n.sim = 30)
 plot_foi(res,burn_in = 5000, n.sim=200, show.attack.rate = TRUE)
-plot_foi(res,burn_in = 5000, n.sim=200, show.attack.rate = FALSE)
+ plot_foi(res,burn_in = 5000, n.sim=200, show.attack.rate = FALSE)
 
 mcmc_steps=10000
 burn_in <- 5000
