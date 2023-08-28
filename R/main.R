@@ -65,7 +65,7 @@ mcmc_adaptive_steps <- 50
 
 # Example 1: Constant Model for the FOI ----
 
-params0=c(0.4427671, 1.1189196, 1.73814652)
+params0=c(0.4427671, 1.1189196, 1.73814652,0)
 inds_to_update <- 1:length(params0)
 model.constant  =  define_model(fct_model_antibody_increase = get_increase_matrix,
                                 fct_model_antibody_decrease = get_decay_matrix,
@@ -85,7 +85,7 @@ saveRDS(res, file='results/Model_constant.rds')
 
 # Example 2: Model with FOI constant in periods of 5 years ----
 
-params0=c(1.2944222, 0.3230752, 0.6266874, 0.4429604, 0.6127554, 0.7394369, 0.9057352, 2.7328078)
+params0=c(1.2944222, 0.3230752, 0.6266874, 0.4429604, 0.6127554, 0.7394369, 0.9057352, 2.7328078,0)
 n_params = length(params0)
 inds_to_update <- 1:length(params0) # Here we update all the parameters
 model.five.years =  define_model(fct_model_antibody_increase = get_increase_matrix,
@@ -106,7 +106,7 @@ saveRDS(res, file='results/Model_5years.rds')
 
 # Example 3: Independent model ----
 
-params0  = c( runif(n  = N.FOI, max = 0.7) , 3,1)
+params0  = c( runif(n  = N.FOI, max = 0.7) , 3,1,0)
 inds_to_update <- 1:length(params0)
 model.independent =  define_model(fct_model_antibody_increase = get_increase_matrix,
                                   fct_model_antibody_decrease = get_decay_matrix,
@@ -127,7 +127,7 @@ saveRDS(res, file='results/Model_independent.rds')
 
 # Example 4: Peak+constant model ----
 
-params0  = c( 0.1,20,0.5, 3,1)
+params0  = c( 0.1,20,0.5, 3,1,0.0)
 inds_to_update <- 1:length(params0)
 model.peak.constant =  define_model(fct_model_antibody_increase = get_increase_matrix,
                                     fct_model_antibody_decrease = get_decay_matrix,
@@ -142,10 +142,7 @@ res <-  run_MCMC(model = model.peak.constant,
                  mcmc_steps = mcmc_steps,
                  mcmc_adaptive_steps = mcmc_adaptive_steps,
                  verbose = TRUE)
-
 saveRDS(res, file='results/Model_peak_constant.rds')
-
-
 
 
 
@@ -168,9 +165,9 @@ compute_DIC(res, burn_in = 5000)
 res= readRDS(file='results/Model_peak_constant_no_seroreversion.rds')
 compute_DIC(res, burn_in = 5000)
 
-plot_fit(res, burn_in = 5000, n.sim = 30)
+plot_fit(res, burn_in = 5000, n.sim = 30, individual.points = TRUE)
 plot_foi(res,burn_in = 5000, n.sim=200, show.attack.rate = TRUE)
- plot_foi(res,burn_in = 5000, n.sim=200, show.attack.rate = FALSE)
+plot_foi(res,burn_in = 5000, n.sim=200, show.attack.rate = FALSE)
 
 mcmc_steps=10000
 burn_in <- 5000
@@ -188,6 +185,13 @@ chain %>%
   facet_wrap(~variable, scale = "free") +
   theme_bw() + theme(legend.position = "none")
 
+
+
+res= readRDS(file='results/Model_constant_no_protection.rds')
+compute_DIC(res, burn_in = 5000)
+
+res= readRDS(file='results/Model_constant_protection.rds')
+compute_DIC(res, burn_in = 5000)
 
 ## compare results ----
 

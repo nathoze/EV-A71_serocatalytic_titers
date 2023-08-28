@@ -72,7 +72,7 @@ run_MCMC <- function(model,
       # Update the transformed parameters
       new.all.params <-  update_all_parameters(old.all.params,
                                                new.param = new_param,
-                                               updated_index = k,
+                                               updated.index = k,
                                                fct_model_antibody_increase,
                                                fct_model_antibody_decrease)
 

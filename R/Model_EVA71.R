@@ -58,6 +58,13 @@ infection_probability <- function(foi,N.titers = 10){
   return(c(rep(1-exp(-foi),N.titers-1), 0))
 }
 
+
+infection_probability <- function(foi, protection = 0, N.titers = 10){
+  FOI = foi * c(exp(-protection*seq(0,N.titers-2)), 0)
+  return((1-exp(-FOI)))
+}
+
+
 titer_distribution <- function(transition.matrices){ # replace on specific indices
 
   df = NULL

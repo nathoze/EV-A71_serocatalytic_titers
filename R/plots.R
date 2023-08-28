@@ -21,13 +21,13 @@ simulate_mean_posterior_titer <-function(k, results){
 
 }
 
-plot_fit <- function(results, burn_in, n.sim=50){
+plot_fit <- function(results, burn_in, n.sim=50, individual.points = FALSE){
 
   data = results$data%>%
     group_by(age, sampling.year) %>%
     mutate(N = sum(n)) %>%
-    mutate(mean.titer.obs = sum(titer.class*n)/N) %>%
-    select(sampling.year,age , mean.titer.obs )
+    mutate(mean.titer.obs = sum(titer.class*n)/N)
+#  %>%   # select(sampling.year,age , mean.titer.obs )
 
   params = results$params[-seq(1,burn_in),]
   indices = sample(x = seq(1,nrow(params)), n.sim)
@@ -48,11 +48,19 @@ plot_fit <- function(results, burn_in, n.sim=50){
     ylab('log2 Titer')+
     theme_bw()
 
+  if(individual.points == TRUE){
+
+    data_repeat = data[rep(seq_len(nrow(data)), data$n),]
+    g = g +
+      geom_jitter(data=data_repeat, aes(x = age , y = titer.class),
+                  width = 0.25, height = 0.25, cex=0.3, colour="gray")
+
+  }
   return(g)
 
 }
 
-plot_data <- function(data){
+plot_data <- function(data, individual.points = FALSE){
   g = data%>%
     group_by(age, sampling.year) %>%
     mutate(N = sum(n)) %>%
@@ -66,6 +74,15 @@ plot_data <- function(data){
     ylab('log2 Titer')+
     ylim(c(0, 5))+
     theme_bw()
+
+  if(individual.points == TRUE){
+
+    data_repeat = data[rep(seq_len(nrow(data)), data$n),]
+    g = g +
+      geom_jitter(data=data_repeat, aes(x = age , y = titer.class),
+                  width = 0.25, height = 0.25, cex=0.3, colour="gray")
+
+  }
 
   return(g)
 
