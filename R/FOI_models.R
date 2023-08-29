@@ -129,7 +129,7 @@ update_all_parameters_model_independent <- function(old.all.parameters, new.para
 
   new.all.parameters = old.all.parameters
   new.all.parameters$params[updated.index] = new.param
-  protection =  tail(params,1)
+  protection =  tail(new.all.parameters$params,1)
 
   if(updated.index <= N.FOI){ # We change the foi and therefore only the corresponding matrix
 

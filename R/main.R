@@ -136,7 +136,6 @@ model.peak.constant =  define_model(fct_model_antibody_increase = get_increase_m
                                     inds_to_update = inds_to_update,
                                     model_foi = "peak_constant")
 
-
 res <-  run_MCMC(model = model.peak.constant,
                  data = data.EV71.Malaysia,
                  mcmc_steps = mcmc_steps,
@@ -147,20 +146,29 @@ saveRDS(res, file='results/Model_peak_constant.rds')
 
 
 # Plot -----
+res= readRDS(file='results/Model_constant_no_protection.rds')
+compute_DIC(res, burn_in = 5000)
+res = readRDS(file='results/Model_5years_no_protection.rds')
+compute_DIC(res, burn_in = 5000)
+res= readRDS(file='results/Model_independent_no_protection.rds')
+compute_DIC(res, burn_in = 5000)
+res= readRDS(file='results/Model_peak_constant_no_protection.rds')
+compute_DIC(res, burn_in = 5000)
 
-res = readRDS(file='results/Model_5years.rds')
+res= readRDS(file='results/Model_constant_protection.rds')
 compute_DIC(res, burn_in = 5000)
-res= readRDS(file='results/Model_independent.rds')
+res = readRDS(file='results/Model_5years_protection.rds')
 compute_DIC(res, burn_in = 5000)
-res= readRDS(file='results/Model_constant.rds')
+res= readRDS(file='results/Model_independent_protection.rds')
 compute_DIC(res, burn_in = 5000)
-res= readRDS(file='results/Model_peak_constant.rds')
+res= readRDS(file='results/Model_peak_constant_protection.rds')
+compute_DIC(res, burn_in = 5000)
+
+res= readRDS(file='results/Model_constant_no_seroreversion.rds')
 compute_DIC(res, burn_in = 5000)
 res = readRDS(file='results/Model_5years_no_seroreversion.rds')
 compute_DIC(res, burn_in = 5000)
 res= readRDS(file='results/Model_independent_no_seroreversion.rds')
-compute_DIC(res, burn_in = 5000)
-res= readRDS(file='results/Model_constant_no_seroreversion.rds')
 compute_DIC(res, burn_in = 5000)
 res= readRDS(file='results/Model_peak_constant_no_seroreversion.rds')
 compute_DIC(res, burn_in = 5000)
