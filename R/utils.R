@@ -185,7 +185,6 @@ compute_DIC <- function(results, burn_in){
               DIC = DIC))
 }
 
-
 quantile025 <- function(X){
   return(as.numeric(quantile(X, probs=0.025 )))
 }
@@ -193,7 +192,6 @@ quantile025 <- function(X){
 quantile975 <- function(X){
   return(as.numeric(quantile(X, probs=0.975 )))
 }
-
 
 # Log likelihood
 compute_loglik <- function(all.params,data) {
@@ -206,5 +204,22 @@ compute_loglik <- function(all.params,data) {
     summarise(s= sum(ll))
 
   return(prob.titers$s)
+
+}
+
+# transform a dataset with titer values into a dataset with seroprevalence
+# needs a cutoff in the input
+get_data_seroprevalence <- function(data, titer.threshold){
+  seroprevalence.data = data %>%
+    group_by(age, sampling.year) %>%
+    mutate(n.samples = sum(n)) %>%
+    filter(titer.class > titer.threshold) %>%
+    mutate(seropositive = sum(n)) %>%
+    select(sampling.year, birth.year,age,n.samples, seropositive)%>%
+    ungroup() %>%
+    distinct() %>%
+    mutate(seroprevalence = seropositive/n.samples)
+
+  return(seroprevalence.data)
 
 }

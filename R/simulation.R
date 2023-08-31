@@ -15,7 +15,6 @@ N.titers = 10 # the number of possible values of the titers
 Titers.0 <- c(1,rep(0,N.titers-1)) # probability distribution of the titers at birth (everybody is seronegative at birth)
 
 
-
 # ## FOI model for the simulated dataset
 # model.constant  =  define_model(fct_model_antibody_increase = get_increase_matrix,
 #                                 fct_model_antibody_decrease = get_decay_matrix,

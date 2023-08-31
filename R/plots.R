@@ -27,7 +27,7 @@ plot_fit <- function(results, burn_in, n.sim=50, individual.points = FALSE){
     group_by(age, sampling.year) %>%
     mutate(N = sum(n)) %>%
     mutate(mean.titer.obs = sum(titer.class*n)/N)
-#  %>%   # select(sampling.year,age , mean.titer.obs )
+  #  %>%   # select(sampling.year,age , mean.titer.obs )
 
   params = results$params[-seq(1,burn_in),]
   indices = sample(x = seq(1,nrow(params)), n.sim)
@@ -83,6 +83,25 @@ plot_data <- function(data, individual.points = FALSE){
                   width = 0.25, height = 0.25, cex=0.3, colour="gray")
 
   }
+
+  return(g)
+
+}
+
+plot_seroprevalence_data <- function(seroprevalence.data){
+  g = seroprevalence.data%>%
+    group_by(age, sampling.year) %>%
+    mutate(lower = binom::binom.confint(seropositive , n.samples, methods = 'exact')$lower) %>%
+    mutate(upper = binom::binom.confint(seropositive , n.samples, methods = 'exact')$upper) %>%
+    ggplot()+
+    geom_line(aes(x=age, y = seroprevalence)) +
+    geom_point(aes(x=age, y = seroprevalence)) +
+    geom_segment(aes(x = age, y=lower, xend = age, yend = upper)) +
+    facet_wrap(  vars(sampling.year))+
+    scale_x_continuous(breaks=seq(1,12))+
+    ylab('Seroprevalence')+
+    ylim(c(0, 1))+
+    theme_bw()
 
   return(g)
 

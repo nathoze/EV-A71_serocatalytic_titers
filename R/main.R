@@ -145,6 +145,29 @@ saveRDS(res, file='results/Model_peak_constant.rds')
 
 
 
+# Example 5: Independent model and no circulation before 1993 ----
+
+params0  = c( runif(n  = N.FOI, max = 0.7) , 3,1,1)
+inds_to_update <- 1:length(params0)
+params0[1:10] = rep(0,10) # no circulation until 1993 (excluded)
+inds_to_update=inds_to_update[-seq(1,10)]
+
+model.independent =  define_model(fct_model_antibody_increase = get_increase_matrix,
+                                  fct_model_antibody_decrease = get_decay_matrix,
+                                  compute_loglik = compute_loglik,
+                                  params0 = params0,
+                                  inds_to_update = inds_to_update,
+                                  model_foi = "independent")
+
+res <-  run_MCMC(model = model.independent,
+                 data = data.EV71.Malaysia,
+                 mcmc_steps = mcmc_steps,
+                 mcmc_adaptive_steps = mcmc_adaptive_steps,
+                 verbose = TRUE)
+
+saveRDS(res, file='results/Model_independent_1993_protection.rds')
+
+
 # Plot -----
 res= readRDS(file='results/Model_constant_no_protection.rds')
 compute_DIC(res, burn_in = 5000)
@@ -153,6 +176,8 @@ compute_DIC(res, burn_in = 5000)
 res= readRDS(file='results/Model_independent_no_protection.rds')
 compute_DIC(res, burn_in = 5000)
 res= readRDS(file='results/Model_peak_constant_no_protection.rds')
+compute_DIC(res, burn_in = 5000)
+res= readRDS(file='results/Model_independent_1993_no_protection.rds')
 compute_DIC(res, burn_in = 5000)
 
 res= readRDS(file='results/Model_constant_protection.rds')
@@ -163,6 +188,8 @@ res= readRDS(file='results/Model_independent_protection.rds')
 compute_DIC(res, burn_in = 5000)
 res= readRDS(file='results/Model_peak_constant_protection.rds')
 compute_DIC(res, burn_in = 5000)
+res= readRDS(file='results/Model_independent_1993_protection.rds')
+compute_DIC(res, burn_in = 5000)
 
 res= readRDS(file='results/Model_constant_no_seroreversion.rds')
 compute_DIC(res, burn_in = 5000)
@@ -171,6 +198,8 @@ compute_DIC(res, burn_in = 5000)
 res= readRDS(file='results/Model_independent_no_seroreversion.rds')
 compute_DIC(res, burn_in = 5000)
 res= readRDS(file='results/Model_peak_constant_no_seroreversion.rds')
+compute_DIC(res, burn_in = 5000)
+res= readRDS(file='results/Model_independent_1993_no_seroreversion.rds')
 compute_DIC(res, burn_in = 5000)
 
 plot_fit(res, burn_in = 5000, n.sim = 30, individual.points = TRUE)
