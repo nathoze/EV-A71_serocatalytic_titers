@@ -242,13 +242,57 @@ print(paste0( round(quantile025(res$params[,ncol(res$params)-1]), digits=2),'  '
 res= readRDS(file='results/Model_peak_constant_no_seroreversion.rds')
 print(paste0( round(quantile025(res$params[,ncol(res$params)-1]), digits=2),'  ', round(mean(res$params[,ncol(res$params)-1]), digits=2), '  ',round(quantile975(res$params[,ncol(res$params)-1]) , digits=2)) )
 
-res = readRDS(file='results/Model_5years.rds')
+res = readRDS(file='results/Model_5years_protection.rds')
 print(paste0( round(quantile025(res$params[,ncol(res$params)-1]), digits=2),'  ', round(mean(res$params[,ncol(res$params)-1]), digits=2), '  ',round(quantile975(res$params[,ncol(res$params)-1]) , digits=2)) )
-res= readRDS(file='results/Model_independent.rds')
+res= readRDS(file='results/Model_independent_protection.rds')
 print(paste0( round(quantile025(res$params[,ncol(res$params)-1]), digits=2),'  ', round(mean(res$params[,ncol(res$params)-1]), digits=2), '  ',round(quantile975(res$params[,ncol(res$params)-1]) , digits=2)) )
-res= readRDS(file='results/Model_constant.rds')
+res= readRDS(file='results/Model_constant_protection.rds')
 print(paste0( round(quantile025(res$params[,ncol(res$params)-1]), digits=2),'  ', round(mean(res$params[,ncol(res$params)-1]), digits=2), '  ',round(quantile975(res$params[,ncol(res$params)-1]) , digits=2)) )
-res= readRDS(file='results/Model_peak_constant.rds')
+res= readRDS(file='results/Model_peak_constant_protection.rds')
 print(paste0( round(quantile025(res$params[,ncol(res$params)-1]), digits=2),'  ', round(mean(res$params[,ncol(res$params)-1]), digits=2), '  ',round(quantile975(res$params[,ncol(res$params)-1]) , digits=2)) )
+
+
+#  Comparative study of the different independent models ----
+res= readRDS(file='results/Model_independent_protection.rds')
+compute_DIC(res, burn_in = 5000)
+
+
+res= readRDS(file='results/Model_independent_no_protection.rds')
+compute_DIC(res, burn_in = 5000)
+
+
+lambda = res$params[5000:10000,31]
+plot(cumsum(truncated_poisson_pmf(lambda = lambda[1], truncation.point = N.titers ,1:11)))
+
+cumulative_response_distribution <- function(index){
+
+  C = c(0, cumsum(truncated_poisson_pmf(lambda = lambda[index], truncation.point = N.titers ,1:6)))
+  return(data.frame(response = C, titer = 0:6, titer.exp = 4*2^(0:6)))
+
+}
+n.sim=50
+burn_in = 5000
+lambda = res$params[-seq(1,burn_in),31]
+indices = sample(x = seq(1,length(lambda)), n.sim)
+
+g = indices %>%
+  map(cumulative_response_distribution) %>%
+  bind_rows() %>%
+  group_by(titer)%>%
+  summarise_at(.vars = "response",
+               .funs = c(mean="mean",quantile025 = "quantile025", quantile975="quantile975")) %>%
+  mutate(titer.exp = 4*2^titer) %>%
+  ggplot()+
+  geom_ribbon(aes(x=titer, ymin=quantile025, ymax=quantile975),fill="red", alpha=0.2) +
+  geom_line(aes(x= titer, y= mean), color='red')+
+  xlab('Titer')+
+  ylim(c(0, 1))+
+  scale_x_continuous(labels = as.character(4*2^seq(0,6)), breaks = seq(0,6))+
+  theme_bw()+
+  ylab('Probability response <= titer')+
+    theme(axis.text.x = element_text(size=18),
+        axis.text.y = element_text(size=18),
+        text=element_text(size=18))
+print(g)
 
 

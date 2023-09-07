@@ -62,22 +62,27 @@ data.parameters = list(min.year.sampling = min.year.sampling,
 library(rstan)
 ## plot seroprevalence data ----
 data_1 = get_data_seroprevalence(data.EV71.Malaysia,titer.threshold = 1)
- data_2 = get_data_seroprevalence(data.EV71.Malaysia,titer.threshold = 2)
- data_3 = get_data_seroprevalence(data.EV71.Malaysia,titer.threshold = 3)
+data_2 = get_data_seroprevalence(data.EV71.Malaysia,titer.threshold = 2)
+data_3 = get_data_seroprevalence(data.EV71.Malaysia,titer.threshold = 3)
 
-  plot_seroprevalence_data(data_1)
- dev.copy(pdf,"results/Seroprevalence_1.pdf", width = 7, height = 5)
- dev.off()
+plot_seroprevalence_data(data_1)
+dev.copy(pdf,"results/Seroprevalence_1.pdf", width = 7, height = 5)
+dev.off()
 
- plot_seroprevalence_data(data_2)
- dev.copy(pdf,"results/Seroprevalence_2.pdf", width = 7, height = 5)
- dev.off()
+plot_seroprevalence_data(data_2)
+dev.copy(pdf,"results/Seroprevalence_2.pdf", width = 7, height = 5)
+dev.off()
 
- plot_seroprevalence_data(data_3)
- dev.copy(pdf,"results/Seroprevalence_3.pdf", width = 7, height = 5)
- dev.off()
+plot_seroprevalence_data(data_3)
+dev.copy(pdf,"results/Seroprevalence_3.pdf", width = 7, height = 5)
+dev.off()
 
-data = data_1
+
+
+
+
+
+data = data_3
 n.samples <- seropositive <- matrix(data = 0, nrow = N.sampling.years, ncol = age.max)
 for(s in seq(min.year.sampling, max.year.sampling) ){
   for(a in seq(age.min, age.max)){
@@ -89,7 +94,7 @@ for(s in seq(min.year.sampling, max.year.sampling) ){
 
 
 #  to do: implement in rstan a serocatalytic model to estimate the FOI between 1983 and 2012 and the decay rate omega
-data= list(NFOI = N.FOI,
+data.list = list(NFOI = N.FOI,
            Nyears = N.sampling.years,
            NAges = age.max,
            nsamples = n.samples,
@@ -98,64 +103,15 @@ data= list(NFOI = N.FOI,
 
 model = rstan::stan_model(file  = "R/seroprevalence_model.stan")
 
-rstan_fit = rstan::sampling(object = model,data)
-# Chains = extract(fit)
-# plot(Chains$omega)
-# FOI = Chains$FOI
-# colMeans(FOI)
-# plot(colMeans(FOI),type='l')
-#
-
-
-get_serocatalytic_foi <- function(k,results){
-
-  FOI = results[k,]
-
-  return(data.frame(year = birth.years, FOI = FOI))
-}
-# Plot the FOI for the simple serocatalytic model
-plot_serocatalytic_foi <- function(rstan_fit, n.sim = 100, show.attack.rate = TRUE){
-
-  Chains = rstan::extract(rstan_fit)
-  FOI = Chains$FOI
-
-  indices = sample(x = seq(1,nrow(FOI)), n.sim)
-
-  if(show.attack.rate == TRUE){
-    ylabel = 'Attack rate'
-  }
-  if(show.attack.rate == FALSE){
-    ylabel = 'Force of infection'
-  }
-
-  g = indices %>%
-    map(get_serocatalytic_foi, results = FOI) %>%
-    bind_rows()%>%
-    group_by(year) %>%
-    mutate(FOI =  case_when(show.attack.rate ~ 1-exp(-FOI),
-                            !show.attack.rate ~ FOI) ) %>%
-    summarise_at(.vars = "FOI",
-                 .funs = c(mean="mean",quantile025 = "quantile025", quantile975="quantile975")) %>%
-    ggplot()+
-    geom_line(aes(x= year, y= mean))+
-    geom_ribbon(aes(x=year, ymin=quantile025, ymax=quantile975),fill="gray30", alpha=0.2) +
-    theme_bw()+
-    ylab(ylabel) +
-    xlab('')+
-    theme(axis.text.x = element_text(size=16),
-          axis.text.y = element_text(size=16),
-          text=element_text(size=16))+
-    ylim(c(0,NA))
-
-  return(g)
-
-}
+rstan_fit = rstan::sampling(object = model, data.list)
 
 plot_serocatalytic_foi(rstan_fit)
 
-dev.copy(pdf,"results/Attack_rate_1.pdf", width = 5, height = 4)
+dev.copy(pdf,"results/Attack_rate_3.pdf", width = 5, height = 4)
 dev.off()
 
+plot_serocatalytic_fit(rstan_fit,data)
 
-
+dev.copy(pdf,"results/Seroprevalence_fit_3.pdf", width = 7, height = 5)
+dev.off()
 

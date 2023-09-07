@@ -194,8 +194,7 @@ simulate_mean_posterior_seroprevalence <- function(k, results){
   return(df)
 }
 
-# A refaire : mettre sous forme de moyenne + 95% CrI
-plot_serocatalytic_fit <- function(rstan_fit, n.sim=50){
+plot_serocatalytic_fit <- function(rstan_fit, data, n.sim=50){
   Chains = rstan::extract(rstan_fit)
   FOI = Chains$FOI
   omega = Chains$omega
@@ -204,22 +203,30 @@ plot_serocatalytic_fit <- function(rstan_fit, n.sim=50){
 
   results = list(FOI = FOI,
                  omega = omega)
+
+
   g = indices %>%
     map(simulate_mean_posterior_seroprevalence, results = results) %>%
     bind_rows() %>%
-   # left_join(data , by = c( "age", "sampling.year")) %>%
+    group_by(age,sampling.year) %>%
+     summarise_at(.vars = "P",
+                 .funs = c(mean="mean",quantile025 = "quantile025", quantile975="quantile975")) %>%
+    left_join(data , by = c( "age", "sampling.year")) %>%
+    mutate(lower = binom::binom.confint(seropositive , n.samples, methods = 'exact')$lower) %>%
+    mutate(upper = binom::binom.confint(seropositive , n.samples, methods = 'exact')$upper) %>%
     ggplot()+
-    stat_summary(aes(x=age, y = P),
-                 fun.data=mean_sdl, fun.args = list(mult=1),
-                 geom="pointrange", color="red")+
-  #  geom_line(aes(x=age, y = mean.titer.obs)) +
-   # geom_point(aes(x=age, y = mean.titer.obs)) +
+    geom_line(aes(x=age, y = seroprevalence)) +
+    geom_point(aes(x=age, y = seroprevalence)) +
+    geom_line(aes(x= age, y= mean), color='red')+
+    geom_ribbon(aes(x=age, ymin=quantile025, ymax=quantile975),fill="red", alpha=0.2) +
     facet_wrap(vars(sampling.year))+
     scale_x_continuous(breaks=seq(1,12))+
     ylim(c(0, 1))+
     ylab('Seroprevalence')+
     theme_bw()
 
+
+  return(g)
 }
 
 get_serocatalytic_foi <- function(k,results){
