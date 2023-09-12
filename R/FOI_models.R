@@ -12,7 +12,7 @@ update_all_parameters_model_constant <- function(old.all.parameters, new.param, 
   new.all.parameters$params[updated.index] = new.param
 
   if(updated.index == 1 | updated.index == 4){ # We change the foi and therefore only the corresponding matrix
-   # p = infection_probability(new.param, protection)
+    # p = infection_probability(new.param, protection)
     p = infection_probability(foi = new.all.parameters$params[1],
                               protection = new.all.parameters$params[4])
     for(j in 1:N.FOI){
@@ -70,15 +70,19 @@ update_all_parameters_model_five_years <- function(old.all.parameters, new.param
   new.all.parameters$params[updated.index] = new.param
 
   n.foi.estimated = round(N.FOI/5)
+  n.foi.estimated = ceil(N.FOI/5)
   index.protection = n.foi.estimated+3
 
   if(updated.index <= n.foi.estimated ){ # We change the foi and therefore only the corresponding matrix
-   # p = infection_probability(new.param)
+    # p = infection_probability(new.param)
     p = infection_probability(new.param, new.all.parameters$params[index.protection] )
     #J =   floor((i-1)/5) + 1
     for(k in seq( (updated.index-1)*5+1,(updated.index)*5) ){
-      new.all.parameters$transition.matrices[[k]] = (1-p)*new.all.parameters$decay.matrix+p*new.all.parameters$increase.matrix
+      if(k <= N.FOI){
+        new.all.parameters$transition.matrices[[k]] = (1-p)*new.all.parameters$decay.matrix+p*new.all.parameters$increase.matrix
+      }
     }
+
     #   new.all.parameters$transition.matrices[[updated.index]] = (1-p)*new.all.parameters$decay.matrix+p*new.all.parameters$increase.matrix
   }
 
@@ -117,8 +121,8 @@ get_all_parameters_model_five_years <- function(params, fct_model_antibody_incre
 }
 is_invalid_model_five_years <- function(k, value) { # Function that checks if parameter value is invalid
   if (value <10e-9) { return(TRUE) } # All the parameters must be > 0
-  if (k <= N.FOI/5  & value >2) { return(TRUE) } # the foi
-  if (k > N.FOI/5  & value >8) { return(TRUE) }# sigmaP, omega, protection
+  if (k <= ceil(N.FOI/5)  & value >2) { return(TRUE) } # the foi
+  if (k > ceil(N.FOI/5) & value >8) { return(TRUE) }# sigmaP, omega, protection
   FALSE
 }
 
@@ -155,11 +159,11 @@ update_all_parameters_model_independent <- function(old.all.parameters, new.para
 }
 
 get_all_parameters_model_independent <- function(params, fct_model_antibody_increase, fct_model_antibody_decrease){
-#
-#   increase.matrix=fct_model_antibody_increase(N.titers  = N.titers, sigma.P = head(tail(params, n=2), n=1))
-#   decay.matrix=fct_model_antibody_decrease(N.titers = N.titers, omega = tail(params,1))
-#
-#
+  #
+  #   increase.matrix=fct_model_antibody_increase(N.titers  = N.titers, sigma.P = head(tail(params, n=2), n=1))
+  #   decay.matrix=fct_model_antibody_decrease(N.titers = N.titers, omega = tail(params,1))
+  #
+  #
   increase.matrix = fct_model_antibody_increase(N.titers  = N.titers, sigma.P = head(tail(params, n=3), n=1))
   decay.matrix = fct_model_antibody_decrease(N.titers = N.titers, omega = head(tail(params, n=2), n=1))
   protection =  tail(params,1)

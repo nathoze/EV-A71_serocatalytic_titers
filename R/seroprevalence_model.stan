@@ -19,16 +19,18 @@ transformed parameters {
 
   for(birthyear in 1:NFOI){
     pinf = 0;
-    for(age in 0:NAges){
+
+    for(age in 1:NAges){
     //  sampling year  = i+birthyear-1
-      if(age+birthyear <=NFOI){
-        pinf=pinf*(exp(-FOI[age+birthyear]-omega)) + FOI[age+birthyear]/(FOI[age+birthyear]+omega)*(1-exp(-omega-FOI[age+birthyear]));
+      if(age+birthyear-1 <= NFOI){
+        pinf=pinf*(exp(-FOI[age+birthyear-1]-omega)) + FOI[age+birthyear-1]/(FOI[age+birthyear-1]+omega)*(1-exp(-omega-FOI[age+birthyear-1]));
         if(age >0 && (age+birthyear-12>= 1)){
           P[age+birthyear-12,age] = pinf;
         }
       }
     }
   }
+
 
 }
 
