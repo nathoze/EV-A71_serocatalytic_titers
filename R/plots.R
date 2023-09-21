@@ -137,7 +137,8 @@ plot_foi <- function(results, burn_in, n.sim = 100, show.attack.rate = TRUE){
     theme_bw()+
     ylab(ylabel) +
     xlab('')+
-    theme(axis.text.x = element_text(size=16),
+    scale_x_continuous(breaks=seq(min(birth.years),max(birth.years), by=2))+
+    theme(axis.text.x = element_text(size=16,angle = 45, vjust=0.5),
           axis.text.y = element_text(size=16),
           text=element_text(size=16))+
     ylim(c(0,NA))
@@ -145,7 +146,6 @@ plot_foi <- function(results, burn_in, n.sim = 100, show.attack.rate = TRUE){
   return(g)
 
 }
-
 
 # Plot the fit and the FOI FOI for the simple serocatalytic model ----
 # Equivalent to the results above for the titer model
@@ -290,7 +290,8 @@ plot_serocatalytic_foi <- function(rstan_fit, n.sim = 100, show.attack.rate = TR
     theme_bw()+
     ylab(ylabel) +
     xlab('')+
-    theme(axis.text.x = element_text(size=16),
+    scale_x_continuous(breaks=seq(min(birth.years),max(birth.years), by=2))+
+    theme(axis.text.x = element_text(size=16,angle = 45, vjust=0.5),
           axis.text.y = element_text(size=16),
           text=element_text(size=16))+
     ylim(c(0,NA))
@@ -431,8 +432,6 @@ plot_seroprevalence_age_group<- function(data, titer.threshold = 1){
   return(d1)
 
 }
-
-
 
 ## Simulations of the seroprevalence by age group and sampling year ----
 

@@ -153,6 +153,21 @@ res= readRDS(file='results/Model_independent_no_protection.rds')
 compute_DIC(res, burn_in = 5000)
 
 
+plot_foi(res,burn_in = 5000, n.sim=200, show.attack.rate = TRUE)
+dev.copy(pdf,"results/Attack_Rate_antibody_model.pdf", width = 8, height = 4)
+dev.off()
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 # plot results : the response of a naive individual ----
