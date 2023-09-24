@@ -433,6 +433,7 @@ plot_seroprevalence_age_group<- function(data, titer.threshold = 1){
 
 }
 
+
 ## Simulations of the seroprevalence by age group and sampling year ----
 
 simulate_seroprevalence_age_group <- function(k, results){

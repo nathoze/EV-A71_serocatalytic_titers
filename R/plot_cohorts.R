@@ -70,15 +70,16 @@ print(g2)
 dev.copy(pdf,"results/cohort_titer_age.pdf", width =9, height = 6)
 dev.off()
 
-titer.threshold = 2
+titer.threshold = 1
 if(titer.threshold ==1){
-  data.seroprevalence = data_1
+  data.seroprevalence = get_data_seroprevalence(data.EV71.Malaysia,titer.threshold = 1)
+
 }
 if(titer.threshold ==2){
-  data.seroprevalence = data_2
+  data.seroprevalence = get_data_seroprevalence(data.EV71.Malaysia,titer.threshold = 2)
 }
 if(titer.threshold ==3){
-  data.seroprevalence = data_3
+  data.seroprevalence = get_data_seroprevalence(data.EV71.Malaysia,titer.threshold = 3)
 }
 
 ## Seroprevalence vs Sampling year ----

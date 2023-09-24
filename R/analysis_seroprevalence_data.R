@@ -80,9 +80,8 @@ dev.off()
 
 
 
-
-
 data = data_3
+
 n.samples <- seropositive <- matrix(data = 0, nrow = N.sampling.years, ncol = age.max)
 for(s in seq(min.year.sampling, max.year.sampling) ){
   for(a in seq(age.min, age.max)){
@@ -107,11 +106,12 @@ rstan_fit = rstan::sampling(object = model, data.list)
 
 plot_serocatalytic_foi(rstan_fit)
 
-dev.copy(pdf,"results/Attack_rate_3.pdf", width = 8, height = 4)
-dev.off()
+#dev.copy(pdf,"results/Attack_rate_3.pdf", width = 5, height = 4)
+#dev.off()
 
 plot_serocatalytic_fit(rstan_fit,data)
 
-dev.copy(pdf,"results/Seroprevalence_fit_3.pdf", width = 7, height = 5)
-dev.off()
+#dev.copy(pdf,"results/Seroprevalence_fit_3.pdf", width = 7, height = 5)
+#dev.off()
+
 
