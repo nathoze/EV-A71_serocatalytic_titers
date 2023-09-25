@@ -159,23 +159,16 @@ dev.copy(pdf,"results/Attack_Rate_antibody_model.pdf", width = 8, height = 4)
 dev.off()
 
 
-
-
-
 # plot results : the response of a naive individual ----
 lambda = res$params[5000:10000,N.FOI+1]
 plot(cumsum(truncated_poisson_pmf(lambda = lambda[1], truncation.point = N.titers ,1:11)))
 
 cumulative_response_distribution <- function(index){
-
   C = c(0, cumsum(truncated_poisson_pmf(lambda = lambda[index], truncation.point = N.titers ,1:6)))
   return(data.frame(response = C, titer = 0:6, titer.exp = 4*2^(0:6)))
-
 }
 
-
 response_distribution <- function(index){
-
   C = c(0, truncated_poisson_pmf(lambda = lambda[index], truncation.point = N.titers ,1:6))
   return(data.frame(response = C, titer = 0:6, titer.exp = 4*2^(0:6)))
 
@@ -183,7 +176,7 @@ response_distribution <- function(index){
 
 n.sim=50
 burn_in = 5000
-lambda = res$params[-seq(1,burn_in),31]
+lambda = res$params[-seq(1,burn_in),N.FOI+1]
 indices = sample(x = seq(1,length(lambda)), n.sim)
 
 g = indices %>%
@@ -196,7 +189,7 @@ g = indices %>%
   ggplot()+
   # geom_ribbon(aes(x=titer, ymin=quantile025, ymax=quantile975),fill="red", alpha=0.2) +
   #geom_line(aes(x= titer, y= mean), color='red')+
-  geom_bar(aes(x= titer, y= mean),stat = "identity", fill  = 'red', color='black')+
+  geom_bar(aes(x= titer, y= mean),stat = "identity", fill  = 'brown2', color='black')+
   xlab('Titer')+
   ylim(c(0, 1))+
   scale_x_continuous(labels = as.character(4*2^seq(0,6)), breaks = seq(0,6))+
@@ -206,9 +199,44 @@ g = indices %>%
         axis.text.y = element_text(size=18),
         text=element_text(size=18))
 print(g)
+dev.copy(pdf,"results/distribution_response.pdf", width = 4, height = 4)
+dev.off()
+
+# plot decay of an individual at 256 (= 7)
+
+decay_distribution <- function(index){
+  A = get_decay_matrix(N.titers = 10, omega = omega[index])[7,]
+  C = A[1:7]
+  return(data.frame(response = C, titer = 0:6, titer.exp = 4*2^(0:6)))
+}
 
 
-## Comparison results and data by age group ----
+omega = res$params[-seq(1,burn_in),N.FOI+2]
+indices = sample(x = seq(1,length(omega)), n.sim)
+
+g = indices %>%
+  map(decay_distribution) %>%
+  bind_rows() %>%
+  group_by(titer)%>%
+  summarise_at(.vars = "response",
+               .funs = c(mean="mean",quantile025 = "quantile025", quantile975="quantile975")) %>%
+  mutate(titer.exp = 4*2^titer) %>%
+  ggplot()+
+  # geom_ribbon(aes(x=titer, ymin=quantile025, ymax=quantile975),fill="red", alpha=0.2) +
+  #geom_line(aes(x= titer, y= mean), color='red')+
+  geom_bar(aes(x= titer, y= mean),stat = "identity", fill  = 'dodgerblue3', color='black')+
+  xlab('Titer')+
+  ylim(c(0, 1))+
+  scale_x_continuous(labels = as.character(4*2^seq(0,6)), breaks = seq(0,6))+
+  theme_bw()+
+  ylab('Decay')+
+  theme(axis.text.x = element_text(size=18),
+        axis.text.y = element_text(size=18),
+        text=element_text(size=18))
+print(g)
+dev.copy(pdf,"results/distribution_decay.pdf", width = 4, height = 4)
+dev.off()
+ ## Comparison results and data by age group ----
 
 plot_titer_age_group_simulation(res)
 dev.copy(pdf,"results/Titers_age_class.pdf", width = 14, height = 5)
