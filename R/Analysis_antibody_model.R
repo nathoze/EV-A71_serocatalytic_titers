@@ -160,17 +160,21 @@ dev.off()
 
 
 # plot results : the response of a naive individual ----
+
+
+Titer.max = 5
+
 lambda = res$params[5000:10000,N.FOI+1]
 plot(cumsum(truncated_poisson_pmf(lambda = lambda[1], truncation.point = N.titers ,1:11)))
 
 cumulative_response_distribution <- function(index){
-  C = c(0, cumsum(truncated_poisson_pmf(lambda = lambda[index], truncation.point = N.titers ,1:6)))
-  return(data.frame(response = C, titer = 0:6, titer.exp = 4*2^(0:6)))
+  C = c(0, cumsum(truncated_poisson_pmf(lambda = lambda[index], truncation.point = N.titers ,1:(Titer.max-1))))
+  return(data.frame(response = C, titer = 0:(Titer.max-1), titer.exp = 4*2^(0:(Titer.max-1))))
 }
 
 response_distribution <- function(index){
-  C = c(0, truncated_poisson_pmf(lambda = lambda[index], truncation.point = N.titers ,1:6))
-  return(data.frame(response = C, titer = 0:6, titer.exp = 4*2^(0:6)))
+  C = c(0, truncated_poisson_pmf(lambda = lambda[index], truncation.point = N.titers ,1:(Titer.max-1)))
+  return(data.frame(response = C, titer = 0:(Titer.max-1), titer.exp = 4*2^(0:(Titer.max-1))))
 
 }
 
@@ -192,9 +196,10 @@ g = indices %>%
   geom_bar(aes(x= titer, y= mean),stat = "identity", fill  = 'brown2', color='black')+
   xlab('Titer')+
   ylim(c(0, 1))+
-  scale_x_continuous(labels = as.character(4*2^seq(0,6)), breaks = seq(0,6))+
+  scale_x_continuous(labels = as.character(4*2^seq(0,(Titer.max-1))), breaks = seq(0,(Titer.max-1)))+
   theme_bw()+
-  ylab('Response after a first infection')+
+  ylab('Frequency')+
+  ggtitle('Response after a first infection')+
   theme(axis.text.x = element_text(size=18),
         axis.text.y = element_text(size=18),
         text=element_text(size=18))
@@ -205,9 +210,9 @@ dev.off()
 # plot decay of an individual at 256 (= 7)
 
 decay_distribution <- function(index){
-  A = get_decay_matrix(N.titers = 10, omega = omega[index])[7,]
-  C = A[1:7]
-  return(data.frame(response = C, titer = 0:6, titer.exp = 4*2^(0:6)))
+  A = get_decay_matrix(N.titers = 10, omega = omega[index])[Titer.max,]
+  C = A[1:(Titer.max)]
+  return(data.frame(response = C, titer = 0:(Titer.max-1), titer.exp = 4*2^(0:(Titer.max-1))))
 }
 
 
@@ -227,16 +232,22 @@ g = indices %>%
   geom_bar(aes(x= titer, y= mean),stat = "identity", fill  = 'dodgerblue3', color='black')+
   xlab('Titer')+
   ylim(c(0, 1))+
-  scale_x_continuous(labels = as.character(4*2^seq(0,6)), breaks = seq(0,6))+
+  scale_x_continuous(labels = as.character(4*2^seq(0,(Titer.max-1))), breaks = seq(0,(Titer.max-1)))+
   theme_bw()+
-  ylab('Decay')+
+  ylab('Frequency')+
+  ggtitle('Decay')+
   theme(axis.text.x = element_text(size=18),
         axis.text.y = element_text(size=18),
         text=element_text(size=18))
 print(g)
 dev.copy(pdf,"results/distribution_decay.pdf", width = 4, height = 4)
 dev.off()
- ## Comparison results and data by age group ----
+
+
+source('R/plot_cohorts.R')
+
+
+## Comparison results and data by age group ----
 
 plot_titer_age_group_simulation(res)
 dev.copy(pdf,"results/Titers_age_class.pdf", width = 14, height = 5)
@@ -247,5 +258,123 @@ plot_seroprevalence_age_group_simulation(res)
 dev.copy(pdf,"results/Seroprevalence_age_class.pdf", width = 14, height = 5)
 dev.off()
 
+
+
+## Plot the number of past infections, by age and sampling year  ----
+
+foi  = 1-exp(-colMeans(res$params[5000:10000,1:N.FOI]))
+df = NULL
+
+for(sampling.year in c(2000, 2005, 2010)){
+
+  w = which(sampling.year == birth.years)
+  foi.years = foi[seq(w-1, w-age.max, by =-1)]
+  df=rbind(df, data.frame(age= 1:age.max, C = cumsum(foi.years), S= sampling.year))
+}
+
+g= df %>% mutate(Year=as.factor(S)) %>%
+  ggplot() + geom_line(aes(x=age, y = C,group =Year, color=Year), size =1.4)+
+  theme_bw()+
+  ylab('Mean cumulative number of infections')+
+  xlab('Age')+
+  scale_x_continuous(labels = as.character(1:age.max), breaks = seq(1,age.max))+
+  theme(axis.text.x = element_text(size=18),
+        axis.text.y = element_text(size=18),
+        text=element_text(size=18))
+print(g)
+dev.copy(pdf,"results/Number_infection.pdf", width = 4, height = 4)
+dev.off()
+print(g)
+
+for(sampling.year in seq(1995, 2011)){
+
+  w = which(sampling.year == birth.years)
+  foi.years = foi[seq(w-1, w-age.max, by =-1)]
+  df=rbind(df, data.frame(age= 1:age.max, C = cumsum(foi.years), S= sampling.year))
+}
+
+g= df %>% mutate(Year=as.factor(S)) %>%
+  ggplot() + geom_line(aes(x=age, y = C,group =Year, color=Year), size =1.2)+
+  theme_bw()+
+  ylab('Mean cumulative number of infections')+
+  xlab('Age')+
+  scale_x_continuous(labels = as.character(1:age.max), breaks = seq(1,age.max))+
+  theme(axis.text.x = element_text(size=18),
+        axis.text.y = element_text(size=18),
+        text=element_text(size=18))
+print(g)
+dev.copy(pdf,"results/Number_infection_2.pdf", width = 6, height = 4)
+dev.off()
+
+
+
+## Age at first infection ----
+
+foi  = 1-exp(-colMeans(res$params[5000:10000,1:N.FOI]))
+df = NULL
+foi =0.001*foi
+
+
+foi[20]=0.5
+# problème dans la boucle
+for(sampling.year in c(2000, 2005, 2010)){
+
+  w = which(sampling.year == birth.years)
+  C = rep(0,age.max)
+  C[1] = foi[w-1]
+  for(a in 2:age.max){
+    P=1
+    for(j in 1:(a-1)){
+      P = P*(1-foi[w-j])
+    }
+    C[a] = foi[w-a]*P
+  }
+
+   df=rbind(df, data.frame(age= 1:age.max, C = C, S= sampling.year))
+}
+
+g= df %>%
+  mutate(Year=as.factor(S)) %>%
+  ggplot() +
+  geom_col(aes(x=age, y = C, group =Year, fill=Year),position = "dodge")+
+  theme_bw()+
+  ylab('Proportion')+
+  xlab('Age at first infection')+
+  scale_x_continuous(labels = as.character(1:age.max), breaks = seq(1,age.max))+
+  theme(axis.text.x = element_text(size=18),
+        axis.text.y = element_text(size=18),
+        text=element_text(size=18))
+print(g)
+#dev.copy(pdf,"results/Number_infection_2.pdf", width = 6, height = 4)
+#dev.off()
+I=0
+for(birth in birth.years){
+  I=I+1
+  FOI = foi[seq(I,min(I+11, N.FOI))]
+  A  =length(FOI)
+  # C = rep(0,age.max)
+  # C[1] = foi[w-1]
+  # for(a in 2:age.max){
+  #   P=1
+  #   for(j in 1:(a-1)){
+  #     P = P*(1-foi[w-j])
+  #   }
+  #   C[a] = foi[w-a]*P
+  # }
+
+
+  # w = which(sampling.year == birth.years)
+  # C = rep(0,age.max)
+  # C[1] = foi[w-1]
+  # for(a in 2:age.max){
+  #   P=1
+  #   for(j in 1:(a-1)){
+  #     P = P*(1-foi[w-j])
+  #   }
+  #   C[a] = foi[w-a]*P
+  # }
+  #
+  # df=rbind(df, data.frame(age= 1:age.max, C = C, S= sampling.year))
+}
 
 

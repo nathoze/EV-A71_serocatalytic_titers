@@ -233,6 +233,9 @@ dev.off()
 
 
 
+dev.copy(pdf,"results/cohort_titer_year_sim_2.pdf", width =9, height = 4)
+dev.off()
+
 
 ## titer vs age ----
 
@@ -296,6 +299,9 @@ print(g6)
 
 
 dev.copy(pdf,"results/cohort_titer_age_sim.pdf", width =9, height = 6)
+dev.off()
+
+dev.copy(pdf,"results/cohort_titer_age_sim_2.pdf", width =9, height = 4)
 dev.off()
 
 ## Seroprevalence vs Sampling year ----
