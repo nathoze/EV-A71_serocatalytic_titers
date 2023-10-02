@@ -79,9 +79,16 @@ dev.off()
 
 
 
-
-data = data_3
-
+titer.threshold = 1
+if(titer.threshold == 1){
+  data = data_1
+}
+if(titer.threshold == 2){
+  data = data_2
+}
+if(titer.threshold == 3){
+  data = data_3
+}
 n.samples <- seropositive <- matrix(data = 0, nrow = N.sampling.years, ncol = age.max)
 for(s in seq(min.year.sampling, max.year.sampling) ){
   for(a in seq(age.min, age.max)){
@@ -101,17 +108,125 @@ data.list = list(NFOI = N.FOI,
 
 
 model = rstan::stan_model(file  = "R/seroprevalence_model.stan")
+model.1993 = rstan::stan_model(file  = "R/seroprevalence_model_1993.stan")
 
-rstan_fit = rstan::sampling(object = model, data.list)
+rstan.fit = rstan::sampling(object = model, data.list)
+rstan.fit.1993 = rstan::sampling(object = model.1993, data.list)
 
-plot_serocatalytic_foi(rstan_fit)
+plot_serocatalytic_foi(rstan.fit)
 
-#dev.copy(pdf,"results/Attack_rate_3.pdf", width = 5, height = 4)
+#dev.copy(pdf,paste0("results/Attack_rate_",titer.threshold,".pdf"), width = 5, height = 4)
 #dev.off()
 
-plot_serocatalytic_fit(rstan_fit,data)
+plot_serocatalytic_fit(rstan.fit.1993,data)
+dev.copy(pdf,paste0("results/Seroprevalence_fit_",titer.threshold,".pdf"), width = 7, height = 5)
+dev.off()
 
-#dev.copy(pdf,"results/Seroprevalence_fit_3.pdf", width = 7, height = 5)
-#dev.off()
+
+
+## DIC serocatalytic model ----
+
+## age at first infection by birth year -----
+
+
+
+fit = rstan.fit.1993
+fit = rstan.fit
+Chains=rstan::extract(fit)
+
+
+foi  = 1-exp(-colMeans(Chains$FOI[,1:N.FOI]))
+df = NULL
+I=0
+for(birth in c(1990, 1995,2000,2005)){
+  I=I+1
+
+  J = which(birth.years == birth)
+  FOI = foi[seq(J,min(J+11, N.FOI))]
+  A  = length(FOI)
+  C = rep(0,A)
+  C[1] = FOI[1]
+  if(A>1){
+    for(a in 2:A){
+      P=1
+      for(j in 1:(a-1)){
+        P = P*(1-FOI[j])
+      }
+      C[a] = FOI[a]*P
+    }
+  }
+
+
+  df=rbind(df, data.frame(age= 1:A, C = C, S= birth))
+}
+
+g= df %>%
+  mutate(Year=as.factor(S)) %>%
+  ggplot() +
+  geom_col(aes(x=age, y = C, group =Year, fill=Year),position = "dodge")+
+  theme_bw()+
+  ylab('Proportion')+
+  xlab('Age at first infection')+
+  labs(fill ="Birth year")+
+  scale_x_continuous(labels = as.character(1:age.max), breaks = seq(1,age.max))+
+  theme(axis.text.x = element_text(size=18),
+        axis.text.y = element_text(size=18),
+        text=element_text(size=18))
+print(g)
+dev.copy(pdf,paste0("results/Age_infection_serocatalytic_",titer.threshold,".pdf"), width = 6, height = 4)
+dev.off()
+
+
+
+df = NULL
+I=0
+for(birth in seq(1990, 2005)){
+  I=I+1
+  J = which(birth.years == birth)
+
+  FOI = foi[seq(J,min(J+11, N.FOI))]
+  A  = length(FOI)
+  C = rep(0,A)
+  C[1] = FOI[1]
+  if(A>1){
+    for(a in 2:A){
+      P=1
+      for(j in 1:(a-1)){
+        P = P*(1-FOI[j])
+      }
+      C[a] = FOI[a]*P
+    }
+  }
+  df=rbind(df, data.frame(age= 1:A, C = C, S= birth))
+}
+A=df %>%
+  mutate(Year=as.factor(S)) %>%
+  group_by(Year) %>%
+  summarise(a = sum(age*C))
+
+
+g= df %>%
+  group_by(S) %>%
+  summarise(a = sum(age*C)) %>%
+  ungroup() %>%
+  ggplot() +
+  geom_line(aes(x=S, y = a-1), size=1.2)+
+  theme_bw()+
+  ylab('Mean age at first infection')+
+  xlab('Birth year')+
+  ylim(c(0,NA)) +
+  theme(axis.text.x = element_text(size=18),
+        axis.text.y = element_text(size=18),
+        text=element_text(size=18))
+print(g)
+
+
+print(g)
+dev.copy(pdf,paste0("results/Mean_Age_infection_serocatalytic_",titer.threshold,".pdf"), width = 4, height = 4)
+dev.off()
+
+
+## Total number of infections by age and by birth year -----
+
 
 

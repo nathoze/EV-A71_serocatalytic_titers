@@ -114,13 +114,13 @@ chain %>%
   facet_wrap(~variable, scale = "free") +
   theme_bw() + theme(legend.position = "none")
 
+res= readRDS(file='results/Model_constant_protection.rds')
+compute_DIC(res, burn_in = 5000)
 
 
 res= readRDS(file='results/Model_constant_no_protection.rds')
 compute_DIC(res, burn_in = 5000)
 
-res= readRDS(file='results/Model_constant_protection.rds')
-compute_DIC(res, burn_in = 5000)
 
 ## compare results ----
 
@@ -204,7 +204,7 @@ g = indices %>%
         axis.text.y = element_text(size=18),
         text=element_text(size=18))
 print(g)
-dev.copy(pdf,"results/distribution_response.pdf", width = 4, height = 4)
+dev.copy(pdf,"results/distribution_response.pdf", width = 3, height = 4)
 dev.off()
 
 # plot decay of an individual at 256 (= 7)
@@ -240,7 +240,7 @@ g = indices %>%
         axis.text.y = element_text(size=18),
         text=element_text(size=18))
 print(g)
-dev.copy(pdf,"results/distribution_decay.pdf", width = 4, height = 4)
+dev.copy(pdf,"results/distribution_decay.pdf", width = 3, height = 4)
 dev.off()
 
 
@@ -285,6 +285,7 @@ print(g)
 dev.copy(pdf,"results/Number_infection.pdf", width = 4, height = 4)
 dev.off()
 print(g)
+df = NULL
 
 for(sampling.year in seq(1995, 2011)){
 
@@ -310,27 +311,28 @@ dev.off()
 
 ## Age at first infection ----
 
+
 foi  = 1-exp(-colMeans(res$params[5000:10000,1:N.FOI]))
 df = NULL
-foi =0.001*foi
+I=0
+for(birth in c(1990, 1995,2000,2005)){
+  I=I+1
+  J = which(birth.years == birth)
 
-
-foi[20]=0.5
-# problème dans la boucle
-for(sampling.year in c(2000, 2005, 2010)){
-
-  w = which(sampling.year == birth.years)
-  C = rep(0,age.max)
-  C[1] = foi[w-1]
-  for(a in 2:age.max){
-    P=1
-    for(j in 1:(a-1)){
-      P = P*(1-foi[w-j])
+  FOI = foi[seq(J,min(J+11, N.FOI))]
+  A  = length(FOI)
+  C = rep(0,A)
+  C[1] = FOI[1]
+  if(A>1){
+    for(a in 2:A){
+      P=1
+      for(j in 1:(a-1)){
+        P = P*(1-FOI[j])
+      }
+      C[a] = FOI[a]*P
     }
-    C[a] = foi[w-a]*P
   }
-
-   df=rbind(df, data.frame(age= 1:age.max, C = C, S= sampling.year))
+  df=rbind(df, data.frame(age= 1:A, C = C, S= birth))
 }
 
 g= df %>%
@@ -340,41 +342,98 @@ g= df %>%
   theme_bw()+
   ylab('Proportion')+
   xlab('Age at first infection')+
+  labs(fill ="Birth year")+
   scale_x_continuous(labels = as.character(1:age.max), breaks = seq(1,age.max))+
   theme(axis.text.x = element_text(size=18),
         axis.text.y = element_text(size=18),
         text=element_text(size=18))
 print(g)
-#dev.copy(pdf,"results/Number_infection_2.pdf", width = 6, height = 4)
-#dev.off()
+dev.copy(pdf,"results/Age_infection.pdf", width = 6, height = 4)
+dev.off()
+
+# compute mean age at first infection
+df %>%
+  mutate(Year=as.factor(S)) %>%
+  group_by(Year) %>%
+  summarise(a = sum(age*C))
+
+
+foi  = 1-exp(-colMeans(res$params[5000:10000,1:N.FOI]))
+df = NULL
 I=0
-for(birth in birth.years){
+for(birth in seq(1990, 2005)){
   I=I+1
-  FOI = foi[seq(I,min(I+11, N.FOI))]
-  A  =length(FOI)
-  # C = rep(0,age.max)
-  # C[1] = foi[w-1]
-  # for(a in 2:age.max){
-  #   P=1
-  #   for(j in 1:(a-1)){
-  #     P = P*(1-foi[w-j])
-  #   }
-  #   C[a] = foi[w-a]*P
-  # }
+  J = which(birth.years == birth)
+
+  FOI = foi[seq(J,min(J+11, N.FOI))]
+  A  = length(FOI)
+  C = rep(0,A)
+  C[1] = FOI[1]
+  if(A>1){
+    for(a in 2:A){
+      P=1
+      for(j in 1:(a-1)){
+        P = P*(1-FOI[j])
+      }
+      C[a] = FOI[a]*P
+    }
+  }
+  df=rbind(df, data.frame(age= 1:A, C = C, S= birth))
+}
+A=df %>%
+  mutate(Year=as.factor(S)) %>%
+  group_by(Year) %>%
+  summarise(a = sum(age*C))
 
 
-  # w = which(sampling.year == birth.years)
-  # C = rep(0,age.max)
-  # C[1] = foi[w-1]
-  # for(a in 2:age.max){
-  #   P=1
-  #   for(j in 1:(a-1)){
-  #     P = P*(1-foi[w-j])
-  #   }
-  #   C[a] = foi[w-a]*P
-  # }
-  #
-  # df=rbind(df, data.frame(age= 1:age.max, C = C, S= sampling.year))
+g= df %>%
+  group_by(S) %>%
+  summarise(a = sum(age*C)) %>%
+  ungroup() %>%
+  ggplot() +
+  geom_line(aes(x=S, y = a-1), size=1.2)+
+  theme_bw()+
+  ylab('Mean age at first infection')+
+  xlab('Birth year')+
+  ylim(c(0,NA)) +
+  theme(axis.text.x = element_text(size=18),
+        axis.text.y = element_text(size=18),
+        text=element_text(size=18))
+print(g)
+
+
+print(g)
+dev.copy(pdf,"results/Mean_Age_infection.pdf", width = 4, height = 4)
+dev.off()
+
+
+## Time to reach the minimal titer value ----
+omega = mean(res$params[5000:10000,N.FOI+2])
+Mdecay = get_decay_matrix(omega = omega)
+
+V0 = rep(0,N.titers)
+V0[5] =1
+VN = V0
+C=rep(0,11)
+df = NULL
+j=0
+for(time in 0:10){
+  C[time+1] = VN[1]
+
+  VN = t(Mdecay) %*%VN
 }
 
+g= data.frame(years = 0:10, C = 100*(1-C)) %>%
+  ggplot() +
+  geom_line(aes(x=years, y = C),col ='dodgerblue3', size=1.2)+
+  theme_bw()+
+  ylab('Seropositive (%)')+
+  xlab('Time (years)')+
+  scale_x_continuous(labels = as.character(0:10), breaks = seq(0,10))+
+  theme(axis.text.x = element_text(size=18),
+        axis.text.y = element_text(size=18),
+        text=element_text(size=18))
+print(g)
+dev.copy(pdf,"results/Survival.pdf", width = 4, height = 4)
+dev.off()
 
