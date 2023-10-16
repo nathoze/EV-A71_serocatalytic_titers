@@ -79,7 +79,7 @@ dev.off()
 
 
 
-titer.threshold = 1
+titer.threshold = 3
 if(titer.threshold == 1){
   data = data_1
 }
@@ -122,23 +122,51 @@ plot_serocatalytic_fit(rstan.fit.1993,data)
 dev.copy(pdf,paste0("results/Seroprevalence_fit_",titer.threshold,".pdf"), width = 7, height = 5)
 dev.off()
 
+saveRDS(object = rstan.fit, file = paste0("results/Serocatalytic_threshold_", titer.threshold,'.rds') )
+saveRDS(object = rstan.fit.1993, file = paste0("results/Serocatalytic_1993_threshold_", titer.threshold,'.rds') )
 
-
-## DIC serocatalytic model ----
 
 ## age at first infection by birth year -----
+titer.threshold=3
+
+if(titer.threshold == 1){
+  data = data_1
+}
+if(titer.threshold == 2){
+  data = data_2
+}
+if(titer.threshold == 3){
+  data = data_3
+}
+n.samples <- seropositive <- matrix(data = 0, nrow = N.sampling.years, ncol = age.max)
+for(s in seq(min.year.sampling, max.year.sampling) ){
+  for(a in seq(age.min, age.max)){
+    d = data %>% filter(age == a & sampling.year ==s )
+    n.samples[s-min.year.sampling+1, a-age.min+1] = d$n.samples
+    seropositive [s-min.year.sampling+1, a-age.min+1] = d$seropositive
+  }
+}
+
+data.list = list(NFOI = N.FOI,
+                 Nyears = N.sampling.years,
+                 NAges = age.max,
+                 nsamples = n.samples,
+                 seropositive = seropositive)
 
 
+rstan.fit = readRDS(file = paste0("results/Serocatalytic_threshold_", titer.threshold,'.rds') )
+rstan.fit.1993 = readRDS(file = paste0("results/Serocatalytic_1993_threshold_", titer.threshold,'.rds') )
 
 fit = rstan.fit.1993
 fit = rstan.fit
-Chains=rstan::extract(fit)
 
+
+Chains=rstan::extract(fit)
 
 foi  = 1-exp(-colMeans(Chains$FOI[,1:N.FOI]))
 df = NULL
 I=0
-for(birth in c(1990, 1995,2000,2005)){
+for(birth in c( 1995,2000,2005)){
   I=I+1
 
   J = which(birth.years == birth)
@@ -177,10 +205,10 @@ dev.copy(pdf,paste0("results/Age_infection_serocatalytic_",titer.threshold,".pdf
 dev.off()
 
 
-
+# Mean age at first infection ----
 df = NULL
 I=0
-for(birth in seq(1990, 2005)){
+for(birth in seq(1995, 2005)){
   I=I+1
   J = which(birth.years == birth)
 
@@ -214,19 +242,130 @@ g= df %>%
   theme_bw()+
   ylab('Mean age at first infection')+
   xlab('Birth year')+
-  ylim(c(0,NA)) +
+  ylim(c(0,5)) +
+  scale_x_continuous(labels = as.character(c(1995,2000,2005)), breaks = c(1995,2000,2005))+
   theme(axis.text.x = element_text(size=18),
         axis.text.y = element_text(size=18),
         text=element_text(size=18))
 print(g)
 
-
-print(g)
 dev.copy(pdf,paste0("results/Mean_Age_infection_serocatalytic_",titer.threshold,".pdf"), width = 4, height = 4)
 dev.off()
 
 
-## Total number of infections by age and by birth year -----
 
+ n.sim=100
+ foi  = 1-exp(-Chains$FOI[,1:N.FOI])
+
+
+#foi  = 1-exp(-(res$params[5000:10000,1:N.FOI]))
+indices = sample(x = seq(1,nrow(foi)), n.sim)
+
+g= indices%>%
+  map(probability_first_infection) %>%
+  bind_rows() %>%
+  group_by(year_first_infection) %>%
+  # summarise(age_mean = sum((age-1)*C)/sum(C)) %>%
+  filter(year_first_infection >=1995) %>%
+  summarise_at(.vars = "age_mean",
+               .funs = c(mean="mean",quantile025 = "quantile025", quantile975="quantile975")) %>%
+  ggplot() +
+  geom_line(aes(x=year_first_infection, y = mean), size=1.2)+
+  geom_ribbon(aes(x = year_first_infection, ymin=quantile025, ymax=quantile975), alpha=0.2, fill= "black") +
+  theme_bw()+
+  ylab('Mean age at first infection')+
+  xlab('Year')+
+  scale_x_continuous(labels = as.character(c(1995,2000,2005, 2010)), breaks = c(1995,2000,2005, 2010))+
+  ylim(c(0,4)) +
+  theme(axis.text.x = element_text(size=18),
+        axis.text.y = element_text(size=18),
+        text=element_text(size=18))
+print(g)
+
+dev.copy(pdf,paste0("results/Mean_Age_infection_by_year_serocatalytic_",titer.threshold,".pdf"), width = 4, height = 4)
+dev.off()
+
+
+
+
+
+
+## decay time ----
+
+decay_curve <- function(omega){
+  Time = seq(0,8,by=0.1)
+  df  = data.frame(Time = Time, C = exp(-omega*Time))
+  return(df)
+}
+
+
+omega = Chains$omega
+g = omega  %>%
+  map(decay_curve) %>%
+  bind_rows() %>%
+  group_by(Time) %>%
+  summarise_at(.vars = "C",
+               .funs = c(mean="mean",quantile025 = "quantile025", quantile975="quantile975")) %>%
+  ggplot()+
+  geom_line(aes(x=Time, y = mean),col ='dodgerblue3', size=1.2)+
+  theme_bw()+
+  geom_ribbon(aes(x = Time, ymin=quantile025, ymax=quantile975), alpha=0.2, fill= "dodgerblue3") +
+  ylab('Seropositive (%)')+
+  xlab('Time (years)')+
+  ylim(c(0,1))+
+  scale_x_continuous(labels = as.character(0:8), breaks = seq(0,8))+
+  theme(axis.text.x = element_text(size=18),
+        axis.text.y = element_text(size=18),
+        text=element_text(size=18))
+print(g)
+dev.copy(pdf,paste0("results/Survival_titer_",titer.threshold,".pdf"), width = 4, height = 4)
+dev.off()
+
+
+mean(log(2)/omega)
+
+## DIC -----
+
+for(f in c(1,2)){
+
+  if(f==1){
+    fit = rstan.fit
+  }
+  if(f==2){
+    fit = rstan.fit.1993
+  }
+
+  Chains=rstan::extract(fit)
+
+  P = Chains$P
+  dim(Chains$P)
+  LL=rep(0,4000)
+  Nyears=18
+  NAges=12
+  for(I in 1:4000){
+
+    ll = 0
+    for(j in 1:Nyears){
+      for(i in 1:NAges){
+        ll = ll+ log(dbinom(x = data.list$seropositive[j,i], size = data.list$nsamples[j,i], prob =  P[I,j,i]))
+      }
+    }
+    LL[I] = ll
+  }
+  avg_deviance = mean(-2*LL)
+
+  ll.mean = 0
+  for(j in 1:Nyears){
+    for(i in 1:NAges){
+      ll.mean = ll.mean+ log(dbinom(x = data.list$seropositive[j,i], size = data.list$nsamples[j,i], prob =  mean(P[,j,i])))
+    }
+  }
+  deviance_avg_params = -2*ll.mean
+
+  pD = avg_deviance-deviance_avg_params
+  DIC = pD + avg_deviance
+  print(DIC)
+
+}
 
 

@@ -65,42 +65,42 @@ infection_probability <- function(foi, protection = 0, N.titers = 10){
 }
 
 
-titer_distribution <- function(transition.matrices){ # replace on specific indices
-
-  df = NULL
-  j=0
-  for(birth.year in seq(min.year.sampling-age.max,max.year.sampling )){
-
-    titers = Titers.0
-    years <- head(seq(birth.year,min(birth.year+age.max,max.year.sampling)),age.max)
-
-    n = length(years)
-    Titers.year = matrix(data = NA, nrow = N.titers, ncol = n)
-    i=0
-    for(foi.index in years){
-      i=i+1
-      titers = t(transition.matrices[[i+j]])%*% titers
-      Titers.year[,i] = titers
-    }
-    j=j+1
-
-    obs = get_observed_titers(Titers.year)
-
-    df=rbind(df, data.frame( birth.year = birth.year,
-                             age = rep(seq(1,n), each = titer.observable.max),
-                             obs.proportion = as.numeric(obs),
-                             titer.class= rep(seq(1,titer.observable.max), n)))
-  }
-
-  df2 = df %>%
-    mutate(sampling.year = age+birth.year) %>%
-    #filter(age <= age.max) %>%
-    filter(sampling.year >= min.year.sampling) %>%
-    filter(sampling.year <= max.year.sampling)
-
-  return(df2)
-
-}
+# titer_distribution <- function(transition.matrices){ # replace on specific indices
+#
+#   df = NULL
+#   j=0
+#   for(birth.year in seq(min.year.sampling-age.max,max.year.sampling )){
+#
+#     titers = Titers.0
+#     years <- head(seq(birth.year,min(birth.year+age.max,max.year.sampling)),age.max)
+#
+#     n = length(years)
+#     Titers.year = matrix(data = NA, nrow = N.titers, ncol = n)
+#     i=0
+#     for(foi.index in years){
+#       i=i+1
+#       titers = t(transition.matrices[[i+j]])%*% titers
+#       Titers.year[,i] = titers
+#     }
+#     j=j+1
+#
+#     obs = get_observed_titers(Titers.year)
+#
+#     df=rbind(df, data.frame( birth.year = birth.year,
+#                              age = rep(seq(1,n), each = titer.observable.max),
+#                              obs.proportion = as.numeric(obs),
+#                              titer.class= rep(seq(1,titer.observable.max), n)))
+#   }
+#
+#   df2 = df %>%
+#     mutate(sampling.year = age+birth.year) %>%
+#     #filter(age <= age.max) %>%
+#     filter(sampling.year >= min.year.sampling) %>%
+#     filter(sampling.year <= max.year.sampling)
+#
+#   return(df2)
+#
+# }
 
 
 # Here with NF0I = 29
