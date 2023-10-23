@@ -165,6 +165,14 @@ plot_foi(res,burn_in = 5000, n.sim=200, show.attack.rate = TRUE)
 dev.copy(pdf,"results/Attack_Rate_antibody_model.pdf", width = 8, height = 4)
 dev.off()
 
+# plot the histogram of the foi ----
+FOI.list = colMeans(res$params[-seq(1,5000),which(birth.years >= sampling.years[1]) ])
+hist(1-exp(-FOI.list), n=20)
+
+
+
+
+
 
 # plot results : the response of a naive individual ----
 
@@ -204,6 +212,7 @@ g = indices %>%
   # geom_ribbon(aes(x=titer, ymin=quantile025, ymax=quantile975),fill="red", alpha=0.2) +
   #geom_line(aes(x= titer, y= mean), color='red')+
   geom_bar(aes(x= titer, y= mean),stat = "identity", fill  = 'brown2', color='black')+
+  geom_bar(data= data.frame(titer =0, mean = 1),aes(x= titer, y= mean),stat = "identity", fill  = 'brown2', color='red', alpha=0.2, linetype = 'dashed' )+
   xlab('Titer')+
   ylim(c(0, 1))+
   scale_x_continuous(labels = as.character(4*2^seq(0,(Titer.max-1))), breaks = seq(0,(Titer.max-1)))+
@@ -216,6 +225,16 @@ g = indices %>%
 print(g)
 dev.copy(pdf,"results/distribution_response.pdf", width = 3, height = 4)
 dev.off()
+
+
+
+
+
+
+
+
+
+
 
 # plot decay of an individual at 256 (= 7)
 
@@ -240,6 +259,7 @@ g = indices %>%
   # geom_ribbon(aes(x=titer, ymin=quantile025, ymax=quantile975),fill="red", alpha=0.2) +
   #geom_line(aes(x= titer, y= mean), color='red')+
   geom_bar(aes(x= titer, y= mean),stat = "identity", fill  = 'dodgerblue3', color='black')+
+  geom_bar(data= data.frame(titer =4, mean = 1),aes(x= titer, y= mean),stat = "identity", fill  = 'dodgerblue3', color='dodgerblue3', alpha=0.2, linetype = 'dashed' )+
   xlab('Titer')+
   ylim(c(0, 1))+
   scale_x_continuous(labels = as.character(4*2^seq(0,(Titer.max-1))), breaks = seq(0,(Titer.max-1)))+
@@ -585,6 +605,45 @@ print(A)
 dev.copy(pdf,"results/Incidence.pdf", width =5, height = 4)
 dev.off()
 
+
+
+
+A=indices %>%
+  map(incidence_new_infection) %>%
+  bind_rows()%>%
+  group_by(years) %>%
+  filter(years >=1995) %>%
+  mutate(incidence.ratio = incidence.new/incidence.all) %>%
+  summarise_at(.vars = c("incidence.ratio"),
+               .funs = c(mean="mean",quantile025 = "quantile025", quantile975="quantile975")) %>%
+  ggplot() +
+  geom_line(aes(x=years, y = mean), size=1.2)+
+  geom_ribbon(aes(x = years, ymin= quantile025, ymax = quantile975), alpha=0.2, fill= "black") +
+  #geom_line(aes(x= years, y = incidence.all)) +
+  theme_bw()+
+  ylab('Proportion of first infections')+
+  xlab('Year')+
+  scale_x_continuous(labels = as.character(c(1995,2000,2005, 2010)), breaks = c(1995,2000,2005, 2010))+
+  #  ylim(c(0,4)) +
+  theme(axis.text.x = element_text(size=18),
+        axis.text.y = element_text(size=18),
+        text=element_text(size=18))
+print(A)
+dev.copy(pdf,"results/FirstInfections.pdf", width =5, height = 4)
+dev.off()
+
+
+
+
+# Age at which 90% have been infected
+
+
+
+
+
+
+
+
 g = df %>% filter(years >=1995) %>%
   mutate(incidence.new = first.infections/N*10000) %>%
   mutate(incidence.all = all.infections/N*10000) %>%
@@ -600,11 +659,6 @@ g = df %>% filter(years >=1995) %>%
         axis.text.y = element_text(size=18),
         text=element_text(size=18))
 print(g)
-
-
-
-
-
 
 rownames(Pop.Neg) = birth.years
 rownames(Pop.Pos) = birth.years
